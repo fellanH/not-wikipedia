@@ -30,7 +30,7 @@ interface HumanSeed {
 }
 
 interface TaskSpec {
-  taskType: "repair_broken_link" | "resolve_placeholder" | "fix_orphan" | "create_new" | "ecosystem_healthy";
+  taskType: "repair_broken_link" | "create_from_live_404" | "resolve_placeholder" | "fix_orphan" | "create_new" | "ecosystem_healthy";
   priority: "critical" | "high" | "medium" | "low";
   topic: {
     name: string;
@@ -45,6 +45,7 @@ interface TaskSpec {
     brokenLinks: number;
     orphans: number;
     placeholders: number;
+    live404s?: number;
   };
 }
 
@@ -62,6 +63,79 @@ function secureRandomElement<T>(arr: T[]): T | null {
 
 // INFOBOX_COLORS imported from config.js
 
+const BASE_URL = "https://not-wikipedia.org";
+
+interface Live404Result {
+  target: string;
+  filename: string;
+  suggestedTitle: string;
+  sources: string[];
+}
+
+/**
+ * Crawl the live site and find 404 pages (lightweight version for task selection)
+ */
+async function findLive404s(maxPages: number = 20): Promise<Live404Result[]> {
+  const visited = new Set<string>();
+  const toVisit = [`${BASE_URL}/`];
+  const broken: Map<string, Live404Result> = new Map();
+
+  while (toVisit.length > 0 && visited.size < maxPages) {
+    const url = toVisit.shift()!;
+    if (visited.has(url)) continue;
+    visited.add(url);
+
+    try {
+      const response = await fetch(url, { headers: { "User-Agent": "Not-Wikipedia-TaskSelector/1.0" } });
+
+      if (response.ok) {
+        const html = await response.text();
+        const hrefRegex = /href=["']([^"']+\.html)["']/gi;
+        let match;
+
+        while ((match = hrefRegex.exec(html)) !== null) {
+          let href = match[1];
+          if (href.startsWith("/wiki/")) continue;
+
+          let fullUrl: string;
+          if (href.startsWith("pages/")) {
+            fullUrl = `${BASE_URL}/${href}`;
+          } else if (href.startsWith("./wiki/")) {
+            fullUrl = `${BASE_URL}/${href.slice(2)}`;
+          } else if (!href.includes("/") && href.endsWith(".html")) {
+            fullUrl = url.includes("/wiki/") ? `${BASE_URL}/wiki/${href}` : `${BASE_URL}/wiki/${href}`;
+          } else {
+            continue;
+          }
+
+          if (!visited.has(fullUrl) && !toVisit.includes(fullUrl)) {
+            try {
+              const headResp = await fetch(fullUrl, { method: "HEAD" });
+              if (headResp.status === 404) {
+                const filename = fullUrl.split("/").pop() || "";
+                const suggestedTitle = filename.replace(".html", "").split("-")
+                  .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
+                if (!broken.has(fullUrl)) {
+                  broken.set(fullUrl, { target: fullUrl, filename, suggestedTitle, sources: [url] });
+                } else {
+                  broken.get(fullUrl)!.sources.push(url);
+                }
+              } else if (headResp.ok) {
+                toVisit.push(fullUrl);
+              }
+            } catch { /* skip */ }
+          }
+        }
+      }
+      await new Promise(r => setTimeout(r, 50)); // Small delay
+    } catch { /* skip */ }
+  }
+
+  const results = Array.from(broken.values());
+  results.sort((a, b) => b.sources.length - a.sources.length);
+  return results;
+}
 
 // Embedded fallback corpus for human seed inspiration
 const FALLBACK_CORPUS: Array<{ text: string; source: string }> = [
@@ -151,7 +225,7 @@ async function getFileBasedState(): Promise<{ placeholders: string[]; usedColors
   return state;
 }
 
-async function selectNextTask(): Promise<TaskSpec> {
+async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?: number } = {}): Promise<TaskSpec> {
   const randomSeed = crypto.randomBytes(8).toString("hex");
 
   // Get data from database
@@ -166,12 +240,37 @@ async function selectNextTask(): Promise<TaskSpec> {
   const availableColors = INFOBOX_COLORS.filter(c => !fileState.usedColors.includes(c.toLowerCase()));
   const infoboxColor = secureRandomElement(availableColors) || secureRandomElement(INFOBOX_COLORS) || "#b0c4de";
 
+  // Check for live 404s if requested
+  let live404s: Live404Result[] = [];
+  if (options.useLiveCrawl) {
+    live404s = await findLive404s(options.maxCrawlPages || 20);
+  }
+
   const ecosystemStats = {
     totalArticles: articleCount,
     brokenLinks: brokenLinksData.length,
     orphans: orphansData.length,
     placeholders: fileState.placeholders.length,
+    live404s: live404s.length,
   };
+
+  // Priority 0: Live 404s from deployed site (CRITICAL - takes precedence)
+  // These are pages that exist in links but return 404 on the live site
+  if (options.useLiveCrawl && live404s.length > 0) {
+    const selected = secureRandomElement(live404s) || live404s[0];
+    return {
+      taskType: "create_from_live_404",
+      priority: "critical",
+      topic: {
+        name: selected.suggestedTitle,
+        filename: selected.filename,
+        context: `This page returns 404 on the live site (${selected.target}). Referenced by ${selected.sources.length} page(s): ${selected.sources.map(s => s.split("/").pop()).join(", ")}. Create this missing page to fix the broken links.`,
+      },
+      infoboxColor,
+      randomSeed,
+      ecosystemStats,
+    };
+  }
 
   // Priority 1: Broken links (CRITICAL)
   // Agent should infer article type/category from the link context and referencing articles
@@ -255,13 +354,29 @@ export const tool: ToolModule = {
     description: "Get the next task for the Not-Wikipedia autonomous agent. Returns a minimal task specification with task type, topic context, and optional human seed. The agent should infer article content, type, and thematic direction from context (referencing articles for broken links, or human seed for new content). Only provides infobox color for visual variety.",
     inputSchema: {
       type: "object",
-      properties: {},
+      properties: {
+        use_live_crawl: {
+          type: "boolean",
+          description: "If true, crawl the live site for 404 pages instead of using the database. This makes HTTP requests to not-wikipedia.org to find actual broken links.",
+        },
+        max_crawl_pages: {
+          type: "number",
+          description: "Maximum number of pages to crawl when using live crawl (default: 20)",
+        },
+      },
       required: [],
     },
   },
 
-  handler: async () => {
-    const task = await selectNextTask();
+  handler: async (args) => {
+    const useLiveCrawl = args.use_live_crawl as boolean;
+    const maxCrawlPages = args.max_crawl_pages as number | undefined;
+
+    const task = await selectNextTask({
+      useLiveCrawl,
+      maxCrawlPages,
+    });
+
     return {
       content: [{
         type: "text",

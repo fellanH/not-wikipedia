@@ -119,7 +119,7 @@ not-wikipedia/                    # Source repository
 │   ├── wiki.js                   # Client-side search & previews
 │   ├── api/search-index.json     # Pre-built search index
 │   ├── fragments/                # Article preview fragments
-│   └── pages/*.html
+│   └── wiki/*.html
 └── docs/                         # Documentation
 
 wiki-content/                     # Content repository (auto-deployed)
@@ -129,7 +129,7 @@ wiki-content/                     # Content repository (auto-deployed)
 ├── wiki.js
 ├── api/
 ├── fragments/
-├── pages/*.html
+├── wiki/*.html
 └── vercel.json
     ↓
     GitHub → Vercel (auto-deploy on push)
@@ -144,7 +144,7 @@ Ralph uses a **dual repository** architecture for automatic deployment:
 │                     RALPH AGENT LOOP                            │
 │  1. Fetch task (wiki-next-task)                                 │
 │  2. Create article in isolation                                 │
-│  3. Copy to dist/pages/                                         │
+│  3. Copy to dist/wiki/                                         │
 │  4. Run discovery (queue broken links)                          │
 │  5. Publish to content repo (wiki-git-publish)                  │
 └────────────────────────────────┬───────────────────────────────┘
@@ -243,7 +243,7 @@ PARALLEL_WORKERS=5 AUTO_PUBLISH=true ./ralph.sh
 3. **Setup Isolation** — Creates temporary workspace with symlinks to existing articles
 4. **Generate Prompt** — Writes task details to `PROMPT.md`
 5. **Run Claude** — Executes `claude -p` in isolated environment
-6. **Teardown** — Copies new articles back to shared `dist/pages/`
+6. **Teardown** — Copies new articles back to shared `dist/wiki/`
 7. **Discovery** — Scans new article for broken links, queues them for future generation
 8. **Auto-Publish** — Commits and pushes to content repo → triggers Vercel deploy
 9. **Repeat**

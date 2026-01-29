@@ -7,13 +7,15 @@ set -uo pipefail
 PARALLEL_WORKERS=${PARALLEL_WORKERS:-3}  # Number of parallel agents (env override)
 MAX_LOOPS_PER_WORKER=${MAX_LOOPS_PER_WORKER:-100}  # Set to 0 for unlimited loops per worker
 LOG_DIR="logs"
-WIKI_DIR="../../dist/pages"
+WIKI_DIR="../../dist/wiki"
 MCP_DIR="../mcp"
 MAX_LOGS=100  # Keep only last 100 log files
 HEALTH_CHECK_INTERVAL=10  # Full health check every N total loops
 MAX_DISCOVERY_DEPTH=3  # Maximum recursion depth for Content Fractal
 AUTO_PUBLISH=${AUTO_PUBLISH:-true}  # Auto-publish to content repo after article creation
 VERCEL_DEPLOY=${VERCEL_DEPLOY:-false}  # Trigger Vercel deploy after publish
+USE_LIVE_CRAWL=${USE_LIVE_CRAWL:-false}  # Use live 404 crawling instead of database
+MAX_CRAWL_PAGES=${MAX_CRAWL_PAGES:-20}  # Max pages to crawl when using live crawl
 
 # Coordination files
 COORDINATOR_LOCK="/tmp/ralph-coordinator.lock"
@@ -156,7 +158,7 @@ setup_isolation() {
   log_info "Setting up isolated environment: ${iso_dir}"
 
   # Create directory structure
-  mkdir -p "$iso_dir/dist/pages"
+  mkdir -p "$iso_dir/dist/wiki"
 
   # Copy necessary files into isolation
   cp "CONTRIBUTING.md" "$iso_dir/" 2>/dev/null || true
@@ -166,7 +168,7 @@ setup_isolation() {
   abs_wiki_dir=$(cd "$WIKI_DIR" 2>/dev/null && pwd)
   if [[ -d "$abs_wiki_dir" ]]; then
     for f in "$abs_wiki_dir"/*.html; do
-      [[ -f "$f" ]] && ln -s "$f" "$iso_dir/dist/pages/" 2>/dev/null || true
+      [[ -f "$f" ]] && ln -s "$f" "$iso_dir/dist/wiki/" 2>/dev/null || true
     done
   fi
 
@@ -193,7 +195,7 @@ teardown_isolation() {
 
   # Copy new/modified HTML files back to main wiki directory
   local copied=0
-  for f in "$iso_dir/dist/pages"/*.html; do
+  for f in "$iso_dir/dist/wiki"/*.html; do
     if [[ -f "$f" && ! -L "$f" ]]; then
       local basename_f=$(basename "$f")
       cp "$f" "$WIKI_DIR/$basename_f"
@@ -227,10 +229,17 @@ fetch_task() {
     return 1
   fi
 
+  # Build options based on environment
+  local crawl_opts=""
+  if [[ "$USE_LIVE_CRAWL" == "true" ]]; then
+    crawl_opts="use_live_crawl: true, max_crawl_pages: ${MAX_CRAWL_PAGES}"
+    log_info "Using live 404 crawl mode (max pages: ${MAX_CRAWL_PAGES})"
+  fi
+
   local task_json
   task_json=$(node -e "
 const { tool } = require('./${MCP_DIR}/dist/tools/wiki-next-task.js');
-tool.handler({}).then(r => console.log(r.content[0].text));
+tool.handler({ ${crawl_opts} }).then(r => console.log(r.content[0].text));
 " 2>/dev/null)
 
   release_file_lock "${TASK_LOCK}.dir"
@@ -264,7 +273,7 @@ update_prompt() {
   local prompt_file="$2"
 
   # Extract fields from JSON
-  local output_path=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.outputPath || 'dist/pages/*.html')")
+  local output_path=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.outputPath || 'dist/wiki/*.html')")
   local infobox_color=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.infoboxColor || '')")
   local seed_mode=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.seedMode || 'single')")
 
@@ -513,7 +522,7 @@ run_worker() {
     fi
 
     # Also check isolation dir for files created via Write tool
-    for f in "$isolation_dir/dist/pages"/*.html; do
+    for f in "$isolation_dir/dist/wiki"/*.html; do
       if [[ -f "$f" && ! -L "$f" ]]; then
         local iso_article=$(basename "$f")
         if [[ -z "$new_article" ]]; then
@@ -570,6 +579,7 @@ echo -e "${MAGENTA}════════════════════�
 echo -e "${MAGENTA}   RALPH - Parallel Agent Coordinator${NC}" >&2
 echo -e "${MAGENTA}   Workers: $PARALLEL_WORKERS | Max loops/worker: $MAX_LOOPS_PER_WORKER${NC}" >&2
 echo -e "${MAGENTA}   Auto-publish: $AUTO_PUBLISH | Vercel deploy: $VERCEL_DEPLOY${NC}" >&2
+echo -e "${MAGENTA}   Live crawl: $USE_LIVE_CRAWL (max pages: $MAX_CRAWL_PAGES)${NC}" >&2
 echo -e "${MAGENTA}══════════════════════════════════════════════════════════${NC}" >&2
 echo "" >&2
 

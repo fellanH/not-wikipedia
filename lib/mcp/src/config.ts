@@ -32,7 +32,7 @@ const PROJECT_ROOT = getProjectRoot();
 /**
  * Wiki articles directory (static HTML files).
  */
-export const WIKI_DIR = path.join(PROJECT_ROOT, "dist", "pages");
+export const WIKI_DIR = path.join(PROJECT_ROOT, "dist", "wiki");
 
 /**
  * Database file path.

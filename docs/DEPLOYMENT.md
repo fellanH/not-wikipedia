@@ -34,7 +34,7 @@ Ralph uses a **dual repository** architecture:
 │       │                                                          │
 │       │ (creates article)                                        │
 │       ▼                                                          │
-│  dist/pages/new-article.html                                     │
+│  dist/wiki/new-article.html                                     │
 │       │                                                          │
 │       │ (wiki-git-publish MCP tool)                              │
 │       ▼                                                          │
@@ -47,7 +47,7 @@ Ralph uses a **dual repository** architecture:
 │                wiki-content (content repo)                       │
 │                github.com/fellanH/wiki-content                   │
 │                                                                  │
-│  pages/new-article.html                                          │
+│  wiki/new-article.html                                          │
 │       │                                                          │
 │       │ (GitHub webhook)                                         │
 │       ▼                                                          │
@@ -66,8 +66,8 @@ Ralph uses a **dual repository** architecture:
 
 ### How It Works
 
-1. Ralph agent creates an article in `dist/pages/`
-2. `wiki-git-publish` MCP tool copies to `wiki-content/pages/`
+1. Ralph agent creates an article in `dist/wiki/`
+2. `wiki-git-publish` MCP tool copies to `wiki-content/wiki/`
 3. Tool commits and pushes to GitHub
 4. GitHub webhook triggers Vercel deployment
 5. Site is live in ~5 seconds
@@ -98,7 +98,7 @@ not-wikipedia/
 ├── dist/                # Generated articles
 │   ├── index.html
 │   ├── styles
-│   └── pages/           # HTML articles
+│   └── wiki/           # HTML articles
 └── docs/                # Documentation
 ```
 
