@@ -23,7 +23,7 @@ MCP server providing autonomous agent tools for the Not-Wikipedia ecosystem - an
 │   │                    FILESYSTEM                                 │     │
 │   │  not-wikipedia/     meta/researchers.json     meta/ecosystem.json       │     │
 │   │  ├─ *.html          (researcher          (article metadata,   │     │
-│   │  └─ wiki-common.css  registry)            categories)         │     │
+│   │  └─ styles  registry)            categories)         │     │
 │   └──────────────────────────────────────────────────────────────┘     │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -262,7 +262,7 @@ The tools interact with these project files:
 | File | Purpose |
 |------|---------|
 | `not-wikipedia/*.html` | Wiki articles |
-| `not-wikipedia/wiki-common.css` | Shared styles |
+| `not-wikipedia/styles` | Shared styles |
 | `meta/researchers.json` | Researcher registry with usage tracking |
 | `meta/ecosystem.json` | Article metadata and categories |
 

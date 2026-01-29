@@ -79,6 +79,32 @@ async function copyArticle(filename: string): Promise<"created" | "updated"> {
 }
 
 /**
+ * Recursively copy a directory.
+ */
+async function copyDirectory(src: string, dest: string): Promise<number> {
+  let count = 0;
+  try {
+    await fs.mkdir(dest, { recursive: true });
+    const entries = await fs.readdir(src, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const srcPath = path.join(src, entry.name);
+      const destPath = path.join(dest, entry.name);
+
+      if (entry.isDirectory()) {
+        count += await copyDirectory(srcPath, destPath);
+      } else {
+        await fs.copyFile(srcPath, destPath);
+        count++;
+      }
+    }
+  } catch {
+    // Directory may not exist, that's ok
+  }
+  return count;
+}
+
+/**
  * Sync all articles from source to content repo.
  */
 async function syncAllArticles(): Promise<number> {
@@ -95,8 +121,8 @@ async function syncAllArticles(): Promise<number> {
     count++;
   }
 
-  // Also sync index.html and styles.css if they exist
-  const rootFiles = ["index.html", "styles.css"];
+  // Sync root files (index.html, styles.css, htmx.min.js, wiki.js)
+  const rootFiles = ["index.html", "styles.css", "htmx.min.js", "wiki.js"];
   for (const file of rootFiles) {
     const sourcePath = path.join(WIKI_DIR, "..", file);
     const destPath = path.join(CONTENT_REPO_DIR, file);
@@ -105,6 +131,14 @@ async function syncAllArticles(): Promise<number> {
     } catch {
       // File may not exist, that's ok
     }
+  }
+
+  // Sync HTMX directories (api/, fragments/, categories/)
+  const htmxDirs = ["api", "fragments", "categories"];
+  for (const dir of htmxDirs) {
+    const srcDir = path.join(WIKI_DIR, "..", dir);
+    const destDir = path.join(CONTENT_REPO_DIR, dir);
+    count += await copyDirectory(srcDir, destDir);
   }
 
   return count;

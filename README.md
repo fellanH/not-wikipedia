@@ -1,6 +1,8 @@
-# Ralph
+# Not-Wikipedia
 
-An autonomous Claude Code loop that builds **Not-Wikipedia** — a fictional encyclopedia.
+An autonomous Claude Code loop that builds a fictional encyclopedia — **Not-Wikipedia**.
+
+**Live Site**: [not-wikipedia.vercel.app](https://not-wikipedia.vercel.app)
 
 ## What It Does
 
@@ -11,7 +13,8 @@ The system:
 - Injects human seed passages as the **sole creative driver**
 - Runs Claude to create HTML articles following Wikipedia's aesthetic
 - Validates ecosystem health (broken links, orphans, unresolved placeholders)
-- Logs all runs for debugging and analysis
+- **Auto-deploys** new articles to Vercel via GitHub
+- Provides **HTMX-powered search** and article previews
 
 ---
 
@@ -106,17 +109,26 @@ not-wikipedia/                    # Source repository
 │   │       ├── wiki-next-task.ts
 │   │       ├── wiki-discover.ts
 │   │       ├── wiki-git-publish.ts  # Auto-deploy tool
+│   │       ├── wiki-build-index.ts  # Search index generator
 │   │       └── ...
 │   └── meta/                     # Metadata (ralph.db)
 ├── dist/                         # Generated articles (local)
-│   ├── index.html
+│   ├── index.html                # Homepage with search
 │   ├── styles.css
+│   ├── htmx.min.js               # HTMX library
+│   ├── wiki.js                   # Client-side search & previews
+│   ├── api/search-index.json     # Pre-built search index
+│   ├── fragments/                # Article preview fragments
 │   └── pages/*.html
 └── docs/                         # Documentation
 
 wiki-content/                     # Content repository (auto-deployed)
 ├── index.html
 ├── styles.css
+├── htmx.min.js
+├── wiki.js
+├── api/
+├── fragments/
 ├── pages/*.html
 └── vercel.json
     ↓
@@ -156,6 +168,28 @@ Every article created by Ralph is automatically:
 1. Committed to the content repository
 2. Pushed to GitHub
 3. Deployed to Vercel (~5 seconds)
+
+## Website Features
+
+The live site includes HTMX-powered interactivity:
+
+| Feature | Description |
+|---------|-------------|
+| **Instant Search** | Client-side search with pre-built index |
+| **Article Previews** | Hover over links to see article summaries |
+| **Categories** | Browse articles by category |
+| **Random Article** | Discover random entries |
+
+### Building the Search Index
+
+The search index and fragments are pre-generated:
+
+```bash
+cd lib/mcp && node -e "
+const { tool } = require('./dist/tools/wiki-build-index.js');
+tool.handler({}).then(r => console.log(r.content[0].text));
+"
+```
 
 ## Usage
 
