@@ -6,37 +6,36 @@
 
 | Metric | Current | Bottleneck |
 |--------|---------|------------|
-| Articles | 104 | O(n) file reads per scan |
-| Internal Links | 897 | O(n×m) link validation |
-| Orphan Detection | O(n²) | Grep every file for each file |
-| Health Check | 2×/loop | 3 independent full scans each |
-| Storage | Flat files | No indexing |
-| Database | **Exists but unused** | `.mcp/src/db/database.ts` ready |
+| Articles | ~107 | O(n) file reads per scan |
+| Internal Links | ~900 | O(n×m) link validation |
+| Storage | Flat files | `wiki-content/wiki/*.html` |
+| Database | **SQLite (active)** | `lib/meta/ralph.db` |
+| Deployment | Auto | wiki-content → GitHub → Vercel |
 
-**Critical Path:** Orphan detection at 10K articles = 100M grep operations per health check.
+**Note:** SQLite database is now active and used for task prioritization, link tracking, and discovery queue.
 
 ---
 
-## Phase 1: Activate Existing Database (Target: 1K articles)
+## Phase 1: Database Optimization (Target: 1K articles) ✅ COMPLETE
 
-The database schema already exists in `.mcp/src/db/database.ts` but isn't wired up.
+The SQLite database (`lib/meta/ralph.db`) is now active and used by all MCP tools.
 
-### 1.1 Initialize Database on Startup
+### Current Database Schema
 
-```typescript
-// Add to ralph.sh or create init script
-if [[ ! -f "meta/ralph.db" ]]; then
-  node .mcp/src/db/init.ts  # Bootstrap from existing HTML files
-fi
-```
+- `articles` - Article metadata (filename, title, type, category, inlinks/outlinks)
+- `links` - Source → target relationships
+- `discovery_queue` - Recursive generation queue (depth, priority, status)
+- `researchers` - Fictional researcher profiles
+- `institutions` - Fictional research centers
 
-### 1.2 Wire Up MCP Tools to Database
+### MCP Tools Using Database
 
-| Tool | Current | Change To |
-|------|---------|-----------|
-| `wiki-next-task.ts` | `getEcosystemState()` scans files | Query `articles` + `links` tables |
-| `wiki-broken-links.ts` | Scans all files | `SELECT * FROM links WHERE target_exists = 0` |
-| `wiki-ecosystem.ts` | Scans all files | Query pre-computed stats table |
+| Tool | Database Usage |
+|------|----------------|
+| `wiki-next-task.ts` | Queries priority tasks from discovery_queue |
+| `wiki-broken-links.ts` | `SELECT * FROM links WHERE target NOT IN articles` |
+| `wiki-discover.ts` | Inserts discovered concepts into queue |
+| `wiki-git-publish.ts` | Commits changes to wiki-content repo |
 
 ### 1.3 Replace O(n²) Orphan Detection
 
@@ -109,7 +108,7 @@ export function getOrBuildCache(): LinkGraphCache {
 // Watch for changes instead of polling
 import { watch } from 'chokidar';
 
-const watcher = watch('not-wikipedia/*.html', { persistent: true });
+const watcher = watch('wiki-content/wiki/*.html', { persistent: true });
 
 watcher.on('add', path => invalidateCacheFor(path));
 watcher.on('change', path => invalidateCacheFor(path));
@@ -138,9 +137,9 @@ fi
 
 ### 3.1 Directory Hierarchy
 
-**Before:** `not-wikipedia/babel-incident.html` (flat)
+**Before:** `wiki-content/wiki/babel-incident.html` (flat)
 
-**After:** `not-wikipedia/b/ba/babel-incident.html` (2-level hash)
+**After:** `wiki-content/wiki/b/ba/babel-incident.html` (2-level hash)
 
 ```typescript
 function getArticlePath(slug: string): string {
@@ -160,7 +159,7 @@ function getArticlePath(slug: string): string {
 ```typescript
 // scripts/migrate-to-sharded.ts
 async function migrateToSharded() {
-  const files = await glob('not-wikipedia/*.html');
+  const files = await glob('wiki-content/wiki/*.html');
 
   for (const file of files) {
     const slug = path.basename(file, '.html');

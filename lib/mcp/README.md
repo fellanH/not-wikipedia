@@ -12,22 +12,25 @@ MCP server providing autonomous agent tools for the Not-Wikipedia ecosystem - an
 │   ┌──────────────┐    wiki_next_task    ┌──────────────────────────┐   │
 │   │              │ ◄──────────────────► │   MCP Server             │   │
 │   │  Claude Code │                      │   ├─ wiki_ecosystem      │   │
-│   │    Agent     │    wiki_broken_links │   ├─ wiki_random_topic   │   │
-│   │              │ ◄──────────────────► │   ├─ wiki_researcher     │   │
+│   │    Agent     │    wiki_broken_links │   ├─ wiki_git_publish    │   │
+│   │              │ ◄──────────────────► │   ├─ wiki_build_index    │   │
 │   └──────────────┘                      │   └─ wiki_broken_links   │   │
 │          │                              └──────────────────────────┘   │
 │          │                                          │                   │
-│          │ creates/repairs                          │ reads             │
+│          │ creates/repairs                          │ reads/writes      │
 │          ▼                                          ▼                   │
 │   ┌──────────────────────────────────────────────────────────────┐     │
 │   │                    FILESYSTEM                                 │     │
-│   │  not-wikipedia/     meta/researchers.json     meta/ecosystem.json       │     │
-│   │  ├─ *.html          (researcher          (article metadata,   │     │
-│   │  └─ styles  registry)            categories)         │     │
+│   │  wiki-content/wiki/     lib/meta/ralph.db                     │     │
+│   │  ├─ *.html              (SQLite: articles,                    │     │
+│   │  └─ (articles)           links, queue)                        │     │
 │   └──────────────────────────────────────────────────────────────┘     │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
+
+**Note:** `wiki-content` is the source of truth for all content. It's a separate
+git repository that auto-deploys to Vercel on push.
 
 ## Quick Start
 
@@ -257,14 +260,15 @@ import { tool as wikiMyTool } from "./my-tool.js";
 
 ## Ecosystem Files
 
-The tools interact with these project files:
+The tools interact with these files:
 
 | File | Purpose |
 |------|---------|
-| `not-wikipedia/*.html` | Wiki articles |
-| `not-wikipedia/styles` | Shared styles |
-| `meta/researchers.json` | Researcher registry with usage tracking |
-| `meta/ecosystem.json` | Article metadata and categories |
+| `../wiki-content/wiki/*.html` | Wiki articles (source of truth) |
+| `../wiki-content/styles.css` | Shared styles |
+| `../wiki-content/api/search-index.json` | Search index |
+| `../wiki-content/fragments/*.html` | Article preview fragments |
+| `lib/meta/ralph.db` | SQLite database (articles, links, queue) |
 
 ## Self-Healing Loop
 
@@ -272,10 +276,11 @@ The tools enable a self-healing autonomous loop:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  1. wiki_next_task → Get task with random seed      │
-│  2. Execute task (repair/create)                    │
-│  3. Update meta/ecosystem.json and meta/researchers.json      │
-│  4. Loop back to step 1                             │
+│  1. wiki_next_task → Get task with priority         │
+│  2. Execute task (repair/create) in wiki-content    │
+│  3. wiki_git_publish → Commit and push to GitHub    │
+│  4. Vercel auto-deploys (~5 seconds)                │
+│  5. Loop back to step 1                             │
 └─────────────────────────────────────────────────────┘
 ```
 
