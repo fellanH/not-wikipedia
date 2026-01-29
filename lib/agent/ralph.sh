@@ -7,7 +7,8 @@ set -uo pipefail
 PARALLEL_WORKERS=${PARALLEL_WORKERS:-3}  # Number of parallel agents (env override)
 MAX_LOOPS_PER_WORKER=${MAX_LOOPS_PER_WORKER:-100}  # Set to 0 for unlimited loops per worker
 LOG_DIR="logs"
-WIKI_DIR="../../dist/wiki"
+WIKI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/../wiki-content/wiki"
+CONTENT_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/../wiki-content"
 MCP_DIR="../mcp"
 MAX_LOGS=100  # Keep only last 100 log files
 HEALTH_CHECK_INTERVAL=10  # Full health check every N total loops

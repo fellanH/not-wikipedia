@@ -30,9 +30,15 @@ function getProjectRoot(): string {
 const PROJECT_ROOT = getProjectRoot();
 
 /**
+ * Content repository directory - the source of truth for all wiki content.
+ * This is a separate git repo that Vercel deploys from.
+ */
+export const CONTENT_REPO_DIR = path.join(PROJECT_ROOT, "..", "wiki-content");
+
+/**
  * Wiki articles directory (static HTML files).
  */
-export const WIKI_DIR = path.join(PROJECT_ROOT, "dist", "wiki");
+export const WIKI_DIR = path.join(CONTENT_REPO_DIR, "wiki");
 
 /**
  * Database file path.
@@ -47,18 +53,27 @@ export const META_DIR = path.join(PROJECT_ROOT, "lib", "meta");
 /**
  * CSS file for wiki articles.
  */
-export const WIKI_CSS_PATH = path.join(PROJECT_ROOT, "dist", "styles");
+export const WIKI_CSS_PATH = path.join(CONTENT_REPO_DIR, "styles.css");
 
 /**
  * Index file for the wiki.
  */
-export const WIKI_INDEX_PATH = path.join(PROJECT_ROOT, "dist", "index.html");
+export const WIKI_INDEX_PATH = path.join(CONTENT_REPO_DIR, "index.html");
 
 /**
- * Content repository directory for deployment.
- * This is a separate git repo that Vercel deploys from.
+ * Fragments directory for article previews.
  */
-export const CONTENT_REPO_DIR = path.join(PROJECT_ROOT, "..", "wiki-content");
+export const FRAGMENTS_DIR = path.join(CONTENT_REPO_DIR, "fragments");
+
+/**
+ * API directory for search index and other data.
+ */
+export const API_DIR = path.join(CONTENT_REPO_DIR, "api");
+
+/**
+ * Categories directory.
+ */
+export const CATEGORIES_DIR = path.join(CONTENT_REPO_DIR, "categories");
 
 /**
  * Infobox color palette.

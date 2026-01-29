@@ -8,13 +8,8 @@
 import { ToolModule } from "../types.js";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { WIKI_DIR } from "../config.js";
+import { WIKI_DIR, FRAGMENTS_DIR, API_DIR } from "../config.js";
 import { getArticleByFilename } from "../db/database.js";
-
-// Output directories (relative to dist/)
-const DIST_DIR = path.resolve(WIKI_DIR, "..");
-const FRAGMENTS_DIR = path.join(DIST_DIR, "fragments");
-const API_DIR = path.join(DIST_DIR, "api");
 
 /**
  * Extract first paragraph from HTML as summary (truncated to ~200 chars)

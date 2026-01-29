@@ -12,17 +12,11 @@
 import { ToolModule } from "../types.js";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { WIKI_DIR } from "../config.js";
+import { WIKI_DIR, API_DIR, CATEGORIES_DIR, FRAGMENTS_DIR } from "../config.js";
 import {
   getAllArticles,
   getCategoryDistribution,
 } from "../db/database.js";
-
-// Output directories (relative to dist/)
-const DIST_DIR = path.resolve(WIKI_DIR, "..");
-const API_DIR = path.join(DIST_DIR, "api");
-const CATEGORIES_DIR = path.join(DIST_DIR, "categories");
-const FRAGMENTS_DIR = path.join(DIST_DIR, "fragments");
 
 interface SearchIndexEntry {
   filename: string;

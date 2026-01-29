@@ -97,7 +97,7 @@ Human Seed ─────► Agent (minimal context) ─────► Unique 
 ## Project Structure
 
 ```
-not-wikipedia/                    # Source repository
+not-wikipedia/                    # Orchestration repository
 ├── lib/
 │   ├── agent/
 │   │   ├── ralph.sh              # Main orchestration script
@@ -108,28 +108,21 @@ not-wikipedia/                    # Source repository
 │   │   └── src/tools/
 │   │       ├── wiki-next-task.ts
 │   │       ├── wiki-discover.ts
-│   │       ├── wiki-git-publish.ts  # Auto-deploy tool
+│   │       ├── wiki-git-publish.ts  # Git commit/push tool
 │   │       ├── wiki-build-index.ts  # Search index generator
 │   │       └── ...
 │   └── meta/                     # Metadata (ralph.db)
-├── dist/                         # Generated articles (local)
-│   ├── index.html                # Homepage with search
-│   ├── styles.css
-│   ├── htmx.min.js               # HTMX library
-│   ├── wiki.js                   # Client-side search & previews
-│   ├── api/search-index.json     # Pre-built search index
-│   ├── fragments/                # Article preview fragments
-│   └── wiki/*.html
 └── docs/                         # Documentation
 
-wiki-content/                     # Content repository (auto-deployed)
-├── index.html
+wiki-content/                     # Content repository (SOURCE OF TRUTH)
+├── index.html                    # Homepage with search
 ├── styles.css
-├── htmx.min.js
-├── wiki.js
-├── api/
-├── fragments/
-├── wiki/*.html
+├── htmx.min.js                   # HTMX library
+├── wiki.js                       # Client-side search & previews
+├── api/search-index.json         # Pre-built search index
+├── fragments/                    # Article preview fragments
+├── categories/                   # Category pages
+├── wiki/*.html                   # Article HTML files
 └── vercel.json
     ↓
     GitHub → Vercel (auto-deploy on push)
@@ -137,22 +130,23 @@ wiki-content/                     # Content repository (auto-deployed)
 
 ## Auto-Deploy Architecture
 
-Ralph uses a **dual repository** architecture for automatic deployment:
+The **wiki-content** repository is the source of truth. Ralph writes directly to it:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │                     RALPH AGENT LOOP                            │
 │  1. Fetch task (wiki-next-task)                                 │
 │  2. Create article in isolation                                 │
-│  3. Copy to dist/wiki/                                         │
+│  3. Copy to wiki-content/wiki/                                  │
 │  4. Run discovery (queue broken links)                          │
-│  5. Publish to content repo (wiki-git-publish)                  │
+│  5. Commit and push (wiki-git-publish)                          │
 └────────────────────────────────┬───────────────────────────────┘
                                  │
                                  ▼
 ┌────────────────────────────────────────────────────────────────┐
 │              wiki-content (GitHub)                              │
 │              github.com/fellanH/wiki-content                    │
+│              (SOURCE OF TRUTH)                                  │
 └────────────────────────────────┬───────────────────────────────┘
                                  │
                           (webhook on push)
@@ -243,7 +237,7 @@ PARALLEL_WORKERS=5 AUTO_PUBLISH=true ./ralph.sh
 3. **Setup Isolation** — Creates temporary workspace with symlinks to existing articles
 4. **Generate Prompt** — Writes task details to `PROMPT.md`
 5. **Run Claude** — Executes `claude -p` in isolated environment
-6. **Teardown** — Copies new articles back to shared `dist/wiki/`
+6. **Teardown** — Copies new articles back to `wiki-content/wiki/`
 7. **Discovery** — Scans new article for broken links, queues them for future generation
 8. **Auto-Publish** — Commits and pushes to content repo → triggers Vercel deploy
 9. **Repeat**
@@ -322,19 +316,19 @@ Each generated article includes:
 
 ## Manual Publishing
 
-To manually publish articles or sync the content repo:
+To manually commit and push changes to the content repo:
 
 ```bash
 cd lib/mcp
 
-# Publish a single article
-node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({filename:'article.html'}).then(r=>console.log(r.content[0].text))"
+# Commit and push all changes
+node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({}).then(r=>console.log(r.content[0].text))"
 
-# Sync all articles
-node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({sync_all:true}).then(r=>console.log(r.content[0].text))"
+# Commit without pushing (local commit only)
+node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({push:false}).then(r=>console.log(r.content[0].text))"
 
-# Publish without pushing (local commit only)
-node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({filename:'article.html',push:false}).then(r=>console.log(r.content[0].text))"
+# Commit with custom message
+node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({commit_message:'Add new article'}).then(r=>console.log(r.content[0].text))"
 ```
 
 ### Check Deployment Status
