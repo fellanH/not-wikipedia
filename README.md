@@ -94,26 +94,77 @@ Human Seed ─────► Agent (minimal context) ─────► Unique 
 ## Project Structure
 
 ```
-ralph/
-├── ralph.sh              # Main orchestration script
-├── PROMPT.md             # Current task (auto-generated)
-├── CONTRIBUTING.md       # Article template and guidelines
-├── not-wikipedia/        # Generated HTML articles
-│   ├── wiki-common.css   # Shared Wikipedia-style CSS
-│   └── *.html            # Individual articles
-├── dashboard/            # Web dashboard for browsing
-├── .mcp/                 # MCP tools (task fetching, validation)
-├── .logs/                # Run logs (JSON)
-└── meta/                 # Ecosystem metadata
+not-wikipedia/                    # Source repository
+├── lib/
+│   ├── agent/
+│   │   ├── ralph.sh              # Main orchestration script
+│   │   ├── PROMPT.md             # Current task (auto-generated)
+│   │   ├── CONTRIBUTING.md       # Article template and guidelines
+│   │   └── logs/                 # Run logs (JSON)
+│   ├── mcp/                      # MCP tools (TypeScript)
+│   │   └── src/tools/
+│   │       ├── wiki-next-task.ts
+│   │       ├── wiki-discover.ts
+│   │       ├── wiki-git-publish.ts  # Auto-deploy tool
+│   │       └── ...
+│   └── meta/                     # Metadata (ralph.db)
+├── dist/                         # Generated articles (local)
+│   ├── index.html
+│   ├── styles.css
+│   └── pages/*.html
+└── docs/                         # Documentation
+
+wiki-content/                     # Content repository (auto-deployed)
+├── index.html
+├── styles.css
+├── pages/*.html
+└── vercel.json
+    ↓
+    GitHub → Vercel (auto-deploy on push)
 ```
+
+## Auto-Deploy Architecture
+
+Ralph uses a **dual repository** architecture for automatic deployment:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                     RALPH AGENT LOOP                            │
+│  1. Fetch task (wiki-next-task)                                 │
+│  2. Create article in isolation                                 │
+│  3. Copy to dist/pages/                                         │
+│  4. Run discovery (queue broken links)                          │
+│  5. Publish to content repo (wiki-git-publish)                  │
+└────────────────────────────────┬───────────────────────────────┘
+                                 │
+                                 ▼
+┌────────────────────────────────────────────────────────────────┐
+│              wiki-content (GitHub)                              │
+│              github.com/fellanH/wiki-content                    │
+└────────────────────────────────┬───────────────────────────────┘
+                                 │
+                          (webhook on push)
+                                 │
+                                 ▼
+┌────────────────────────────────────────────────────────────────┐
+│                    Vercel (auto-deploy)                         │
+│              not-wikipedia.vercel.app                           │
+└────────────────────────────────────────────────────────────────┘
+```
+
+Every article created by Ralph is automatically:
+1. Committed to the content repository
+2. Pushed to GitHub
+3. Deployed to Vercel (~5 seconds)
 
 ## Usage
 
 ```bash
+cd lib/agent
 ./ralph.sh
 ```
 
-The script runs indefinitely (or until `MAX_LOOPS` is reached), creating one article per loop. Press `Ctrl+C` to stop gracefully.
+The script runs indefinitely (or until `MAX_LOOPS_PER_WORKER` is reached), creating one article per loop. Press `Ctrl+C` to stop gracefully.
 
 ### Configuration
 
@@ -121,11 +172,20 @@ Edit variables at the top of `ralph.sh`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MAX_LOOPS` | 100 | Maximum iterations (0 = unlimited) |
+| `PARALLEL_WORKERS` | 3 | Number of parallel agent workers |
+| `MAX_LOOPS_PER_WORKER` | 100 | Maximum iterations per worker (0 = unlimited) |
 | `MAX_LOGS` | 100 | Log files to keep |
-| `WIKI_DIR` | not-wikipedia | Article output directory |
 | `MAX_DISCOVERY_DEPTH` | 3 | Maximum recursion depth for Content Fractal |
-| `HEALTH_CHECK_INTERVAL` | 5 | Full health check every N loops |
+| `HEALTH_CHECK_INTERVAL` | 10 | Full health check every N total loops |
+| `AUTO_PUBLISH` | true | Auto-publish to content repo after article creation |
+| `VERCEL_DEPLOY` | false | Trigger manual Vercel deploy (not needed with GitHub auto-deploy) |
+
+### Environment Variables
+
+```bash
+# Override defaults via environment
+PARALLEL_WORKERS=5 AUTO_PUBLISH=true ./ralph.sh
+```
 
 ## Task Types
 
@@ -144,13 +204,15 @@ Edit variables at the top of `ralph.sh`:
 
 ## How It Works
 
-1. **Health Check** — Scans for broken links, orphans, and placeholders
-2. **Fetch Task** — Gets next task from MCP tool (prioritizes discovery queue → broken links → fresh seeds)
-3. **Generate Prompt** — Writes task details to `PROMPT.md`
-4. **Run Claude** — Executes `claude -p` with the prompt
-5. **Recursive Discovery** — Scans new article for concepts and queues them
-6. **Validate** — Post-loop health check
-7. **Repeat**
+1. **Coordinator Starts** — Spawns N parallel worker processes
+2. **Worker Fetches Task** — Gets next task from MCP tool (prioritizes broken links → placeholders → orphans → new content)
+3. **Setup Isolation** — Creates temporary workspace with symlinks to existing articles
+4. **Generate Prompt** — Writes task details to `PROMPT.md`
+5. **Run Claude** — Executes `claude -p` in isolated environment
+6. **Teardown** — Copies new articles back to shared `dist/pages/`
+7. **Discovery** — Scans new article for broken links, queues them for future generation
+8. **Auto-Publish** — Commits and pushes to content repo → triggers Vercel deploy
+9. **Repeat**
 
 ---
 
@@ -223,6 +285,29 @@ Each generated article includes:
 - Internal links to other Not-Wikipedia articles
 - Academic-style references
 - Category footer
+
+## Manual Publishing
+
+To manually publish articles or sync the content repo:
+
+```bash
+cd lib/mcp
+
+# Publish a single article
+node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({filename:'article.html'}).then(r=>console.log(r.content[0].text))"
+
+# Sync all articles
+node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({sync_all:true}).then(r=>console.log(r.content[0].text))"
+
+# Publish without pushing (local commit only)
+node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({filename:'article.html',push:false}).then(r=>console.log(r.content[0].text))"
+```
+
+### Check Deployment Status
+
+```bash
+cd ../wiki-content && vercel ls
+```
 
 ## Dashboard
 

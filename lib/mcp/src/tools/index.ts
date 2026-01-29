@@ -41,6 +41,7 @@ import { tool as wikiEditArticle } from "./wiki-edit-article.js";
 import { tool as wikiAddLink } from "./wiki-add-link.js";
 import { tool as wikiGetArticle } from "./wiki-get-article.js";
 import { tool as wikiDiscover } from "./wiki-discover.js";
+import { tool as wikiGitPublish } from "./wiki-git-publish.js";
 
 // Register all tools here
 // Add your custom tools to this array
@@ -68,6 +69,7 @@ const toolModules: ToolModule[] = [
   wikiAddLink,
   wikiGetArticle,
   wikiDiscover,
+  wikiGitPublish,
 ];
 
 // Build the definitions list for ListToolsRequest

@@ -1,16 +1,106 @@
-# Ralph Deployment Plan
+# Ralph Deployment Guide
 
-> Taking Ralph from local script to production infrastructure
+> Dual repository architecture with automatic Vercel deployment
 
 ## Current State
 
 | Component | Status |
 |-----------|--------|
-| Runtime | Local bash script (`ralph.sh`) |
-| Container | None |
-| CI/CD | None |
-| Process management | Lock file only |
-| Dependencies | Node.js 20+, Claude Code CLI |
+| Runtime | Local bash script (`lib/agent/ralph.sh`) |
+| Static Hosting | **Vercel** (auto-deploy on push) |
+| Content Repo | **GitHub** (`fellanH/wiki-content`) |
+| Process Management | Coordinator + worker locks |
+| Dependencies | Node.js 20+, Claude Code CLI, Vercel CLI |
+
+## Production URLs
+
+| Resource | URL |
+|----------|-----|
+| Live Site | `not-wikipedia.vercel.app` |
+| GitHub Repo | `github.com/fellanH/wiki-content` |
+| Vercel Dashboard | `vercel.com/felix-hellstroms-projects/not-wikipedia` |
+
+---
+
+## Auto-Deploy Architecture
+
+Ralph uses a **dual repository** architecture:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                not-wikipedia (source repo)                       │
+│                                                                  │
+│  lib/agent/ralph.sh                                              │
+│       │                                                          │
+│       │ (creates article)                                        │
+│       ▼                                                          │
+│  dist/pages/new-article.html                                     │
+│       │                                                          │
+│       │ (wiki-git-publish MCP tool)                              │
+│       ▼                                                          │
+└───────┬─────────────────────────────────────────────────────────┘
+        │
+        │ copy + git commit + git push
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                wiki-content (content repo)                       │
+│                github.com/fellanH/wiki-content                   │
+│                                                                  │
+│  pages/new-article.html                                          │
+│       │                                                          │
+│       │ (GitHub webhook)                                         │
+│       ▼                                                          │
+└───────┬─────────────────────────────────────────────────────────┘
+        │
+        │ auto-deploy (~5 seconds)
+        │
+        ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Vercel                                       │
+│              not-wikipedia.vercel.app                            │
+│                                                                  │
+│  Live site automatically updated                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### How It Works
+
+1. Ralph agent creates an article in `dist/pages/`
+2. `wiki-git-publish` MCP tool copies to `wiki-content/pages/`
+3. Tool commits and pushes to GitHub
+4. GitHub webhook triggers Vercel deployment
+5. Site is live in ~5 seconds
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `lib/mcp/src/tools/wiki-git-publish.ts` | MCP tool for publishing |
+| `lib/mcp/src/config.ts` | `CONTENT_REPO_DIR` path |
+| `lib/agent/ralph.sh` | `publish_article()` function |
+| `../wiki-content/vercel.json` | Vercel configuration |
+
+---
+
+## Repository Structure
+
+```
+not-wikipedia/
+├── lib/
+│   ├── agent/           # Agent orchestration
+│   │   ├── ralph.sh     # Main entry script
+│   │   ├── PROMPT.md    # Task specification
+│   │   └── logs/        # Execution logs
+│   ├── mcp/             # MCP tools (TypeScript)
+│   ├── meta/            # Metadata (ecosystem.json, ralph.db)
+│   └── dashboard/       # Web dashboard
+├── dist/                # Generated articles
+│   ├── index.html
+│   ├── styles
+│   └── pages/           # HTML articles
+└── docs/                # Documentation
+```
 
 ---
 
@@ -27,22 +117,24 @@ RUN npm install -g @anthropic-ai/claude-code
 WORKDIR /app
 
 # Copy MCP tools and build
-COPY .mcp/package*.json .mcp/
-RUN cd .mcp && npm ci
+COPY lib/mcp/package*.json lib/mcp/
+RUN cd lib/mcp && npm ci
 
-COPY .mcp/ .mcp/
-RUN cd .mcp && npm run build
+COPY lib/mcp/ lib/mcp/
+RUN cd lib/mcp && npm run build
 
 # Copy application files
-COPY ralph.sh PROMPT.md CONTRIBUTING.md ./
-COPY not-wikipedia/ not-wikipedia/
-COPY meta/ meta/
+COPY lib/agent/ lib/agent/
+COPY lib/meta/ lib/meta/
+COPY dist/ dist/
+COPY CONTRIBUTING.md ./
 COPY .claude/ .claude/
 
 # Environment
 ENV ANTHROPIC_API_KEY=""
 ENV MAX_LOOPS=100
 
+WORKDIR /app/lib/agent
 ENTRYPOINT ["./ralph.sh"]
 ```
 
@@ -57,9 +149,9 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - MAX_LOOPS=0  # Unlimited
     volumes:
-      - ./not-wikipedia:/app/not-wikipedia
-      - ./meta:/app/meta
-      - ./.logs:/app/.logs
+      - ./dist:/app/dist
+      - ./lib/meta:/app/lib/meta
+      - ./lib/agent/logs:/app/lib/agent/logs
     restart: unless-stopped
 ```
 
@@ -89,10 +181,10 @@ jobs:
           node-version: '20'
 
       - name: Build MCP tools
-        run: cd .mcp && npm ci && npm run build
+        run: cd lib/mcp && npm ci && npm run build
 
       - name: Run tests
-        run: cd .mcp && npm test
+        run: cd lib/mcp && npm test
 
       - name: Build Docker image
         run: docker build -t ralph:${{ github.sha }} .
@@ -135,17 +227,17 @@ For initial deployment:
 
 ```
 ┌─────────────────────────────────────────────┐
-│           VPS (4GB RAM, 2 vCPU)              │
+│           VPS (4GB RAM, 2 vCPU)             │
 ├─────────────────────────────────────────────┤
-│  Docker                                      │
-│  ├── ralph (main agent loop)                │
-│  ├── nginx (static file server)             │
-│  └── prometheus (metrics)                   │
+│  Docker                                     │
+│  ├── ralph (main agent loop)               │
+│  ├── nginx (static file server)            │
+│  └── prometheus (metrics)                  │
 ├─────────────────────────────────────────────┤
-│  Volumes                                     │
-│  ├── /data/not-wikipedia (articles)         │
-│  ├── /data/meta (ecosystem state)           │
-│  └── /data/logs (run logs)                  │
+│  Volumes                                    │
+│  ├── /data/dist (articles)                 │
+│  ├── /data/lib/meta (ecosystem state)      │
+│  └── /data/lib/agent/logs (run logs)       │
 └─────────────────────────────────────────────┘
 ```
 
@@ -163,7 +255,7 @@ For initial deployment:
 
 ### Stack: Prometheus + Grafana
 
-Add to `ralph.sh`:
+Add to `lib/agent/ralph.sh`:
 
 ```bash
 # Export metrics for Prometheus
@@ -205,18 +297,100 @@ groups:
 
 | Data Type | Storage | Backup Strategy |
 |-----------|---------|-----------------|
-| Articles (`not-wikipedia/`) | Docker volume / S3 | Daily S3 sync |
-| Metadata (`meta/`) | Docker volume / S3 | Hourly S3 sync |
-| Logs (`.logs/`) | Docker volume | Rotate, 7-day retention |
-| SQLite DB (future) | Docker volume | Daily snapshot |
+| Articles (`dist/`) | Docker volume / S3 | Daily S3 sync |
+| Metadata (`lib/meta/`) | Docker volume / S3 | Hourly S3 sync |
+| Logs (`lib/agent/logs/`) | Docker volume | Rotate, 7-day retention |
 
 ### Backup Script
 
 ```bash
 #!/bin/bash
 # backup.sh - Run via cron daily
-aws s3 sync /data/not-wikipedia s3://ralph-backups/articles/
-aws s3 sync /data/meta s3://ralph-backups/meta/
+aws s3 sync /data/dist s3://ralph-backups/articles/
+aws s3 sync /data/lib/meta s3://ralph-backups/meta/
+```
+
+---
+
+## Static Website Deployment
+
+### Option 1: Vercel Auto-Deploy (Current Setup)
+
+The current setup uses automatic deployment via GitHub:
+
+```bash
+# Content repo location
+../wiki-content/
+
+# Check deployment status
+cd ../wiki-content && vercel ls
+
+# Manual deploy (if needed)
+cd ../wiki-content && vercel --prod
+```
+
+#### Initial Setup (Already Done)
+
+```bash
+# 1. Create content repo
+mkdir ../wiki-content && cd ../wiki-content
+git init
+cp -r ../not-wikipedia/dist/* .
+
+# 2. Create GitHub repo
+gh repo create wiki-content --public --source=. --push
+
+# 3. Connect to Vercel
+vercel --yes
+vercel git connect https://github.com/fellanH/wiki-content
+```
+
+#### Vercel Configuration (`wiki-content/vercel.json`)
+
+```json
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/styles", "destination": "/styles.css" }
+  ]
+}
+```
+
+### Option 2: Nginx on VPS
+
+For self-hosted deployments, add an `nginx` service to docker-compose.yml:
+
+```yaml
+services:
+  ralph:
+    # ... (as above)
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"
+    restart: unless-stopped
+```
+
+### Option 3: GitHub Pages
+
+```yaml
+# GitHub Actions step to push dist/ to gh-pages
+- name: Publish to gh-pages
+  run: |
+    git config user.name "github-actions"
+    git config user.email "github-actions@users.noreply.github.com"
+    cp -R dist out
+    git checkout --orphan gh-pages
+    git rm -rf .
+    cp -R out/. .
+    rm -rf out
+    git add . && git commit -m "Update site"
+    git push -f origin gh-pages
 ```
 
 ---
@@ -233,7 +407,7 @@ aws s3 sync /data/meta s3://ralph-backups/meta/
 ### First deployment
 
 - [ ] Clone repo to server
-- [ ] Copy existing `not-wikipedia/` and `meta/` data
+- [ ] Copy existing `dist/` and `lib/meta/` data
 - [ ] Run `docker compose up -d`
 - [ ] Verify health check passes
 - [ ] Set up monitoring endpoints
@@ -265,24 +439,83 @@ aws s3 sync /data/meta s3://ralph-backups/meta/
 ## Quick Start Commands
 
 ```bash
-# Build and run locally
+# Run Ralph agent locally
+cd lib/agent && ./ralph.sh
+
+# Run with custom settings
+PARALLEL_WORKERS=5 AUTO_PUBLISH=true ./ralph.sh
+
+# Manual publish single article
+cd lib/mcp && node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({filename:'article.html'}).then(r=>console.log(r.content[0].text))"
+
+# Sync all articles to content repo
+cd lib/mcp && node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({sync_all:true}).then(r=>console.log(r.content[0].text))"
+
+# Check Vercel deployment status
+cd ../wiki-content && vercel ls
+
+# Manual Vercel deploy
+cd ../wiki-content && vercel --prod
+
+# Build and run with Docker
 docker compose build
 docker compose up -d
 
 # View logs
 docker compose logs -f ralph
+```
 
-# Stop
-docker compose down
+---
 
-# Deploy to remote server
-scp -r . user@server:/opt/ralph
-ssh user@server "cd /opt/ralph && docker compose up -d"
+## Troubleshooting
+
+### Auto-Deploy Not Working
+
+```bash
+# Check if content repo has remote
+cd ../wiki-content && git remote -v
+
+# Check if Vercel is connected to GitHub
+cd ../wiki-content && vercel git status
+
+# Manually trigger deploy
+cd ../wiki-content && git add -A && git commit -m "Manual sync" && git push
+```
+
+### Vercel Deployment Protection (401 errors)
+
+If the site returns 401 Unauthorized:
+1. Go to Vercel Dashboard → Project Settings
+2. Scroll to "Deployment Protection"
+3. Set to "Disabled" for public access
+
+### Content Out of Sync
+
+```bash
+# Full sync from dist to content repo
+cd lib/mcp && node -e "require('./dist/tools/wiki-git-publish.js').tool.handler({sync_all:true}).then(r=>console.log(r.content[0].text))"
+```
+
+### MCP Tools Not Found
+
+```bash
+# Rebuild MCP tools
+cd lib/mcp && npm run build
 ```
 
 ---
 
 ## Related Documentation
 
-- [SCALE_ROADMAP.md](SCALE_ROADMAP.md) - Code optimization for 10K-1M+ articles
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Article template and style guide
+- [README.md](../README.md) - Project overview and usage
+- [CONTRIBUTING.md](../lib/agent/CONTRIBUTING.md) - Article template and style guide
+
+## Content Repository
+
+The content repository is maintained separately:
+
+| Resource | Location |
+|----------|----------|
+| Local Path | `../wiki-content/` |
+| GitHub | `github.com/fellanH/wiki-content` |
+| Vercel | `vercel.com/felix-hellstroms-projects/not-wikipedia` |

@@ -47,12 +47,18 @@ export const META_DIR = path.join(PROJECT_ROOT, "lib", "meta");
 /**
  * CSS file for wiki articles.
  */
-export const WIKI_CSS_PATH = path.join(PROJECT_ROOT, "dist", "wiki-common.css");
+export const WIKI_CSS_PATH = path.join(PROJECT_ROOT, "dist", "styles");
 
 /**
  * Index file for the wiki.
  */
 export const WIKI_INDEX_PATH = path.join(PROJECT_ROOT, "dist", "index.html");
+
+/**
+ * Content repository directory for deployment.
+ * This is a separate git repo that Vercel deploys from.
+ */
+export const CONTENT_REPO_DIR = path.join(PROJECT_ROOT, "..", "wiki-content");
 
 /**
  * Infobox color palette.
