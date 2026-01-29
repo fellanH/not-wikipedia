@@ -1,2 +1,6 @@
 .logs/
-.mcp/
+.mcp/node_modules/
+.mcp/dist/
+meta/ralph.db
+meta/ralph.db-wal
+meta/ralph.db-shm
