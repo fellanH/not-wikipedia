@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ralph Admin Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Ralph Admin Dashboard</h1>
+        <button id="refresh-btn" onclick="refreshDashboard()">Refresh Data</button>
+    </header>
+
+    <main>
+        <!-- Metric Cards Row -->
+        <section class="metrics-row">
+            <div class="card" id="agent-card">
+                <h3>Agent Status</h3>
+                <div class="metric">
+                    <span class="label">Loop:</span>
+                    <span class="value" id="loop-number">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Last Run:</span>
+                    <span class="value" id="last-run">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Status:</span>
+                    <span class="value status-badge" id="agent-status">Unknown</span>
+                </div>
+            </div>
+
+            <div class="card" id="ecosystem-card">
+                <h3>Ecosystem Health</h3>
+                <div class="metric">
+                    <span class="label">Articles:</span>
+                    <span class="value" id="article-count">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Total Links:</span>
+                    <span class="value" id="link-count">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Broken Links:</span>
+                    <span class="value" id="broken-links">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Orphans:</span>
+                    <span class="value" id="orphan-count">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Avg Links/Article:</span>
+                    <span class="value" id="avg-links">--</span>
+                </div>
+            </div>
+
+            <div class="card" id="researcher-card">
+                <h3>Researchers</h3>
+                <div class="metric">
+                    <span class="label">Total:</span>
+                    <span class="value" id="researcher-total">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Overused:</span>
+                    <span class="value warning" id="researcher-overused">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Moderate:</span>
+                    <span class="value" id="researcher-moderate">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Available:</span>
+                    <span class="value success" id="researcher-available">--</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Category Distribution -->
+        <section class="card category-section">
+            <h3>Category Distribution</h3>
+            <div class="category-bar" id="category-bar"></div>
+            <div class="category-legend" id="category-legend"></div>
+        </section>
+
+        <!-- Word Statistics Section -->
+        <section class="card word-stats-section">
+            <div class="word-stats-header">
+                <h3>Word Usage Statistics</h3>
+                <div class="word-stats-controls">
+                    <button id="analyze-words-btn" onclick="analyzeWordUsage()">Analyze Content</button>
+                    <select id="word-category-filter" onchange="filterWordsByCategory()">
+                        <option value="all">All Categories</option>
+                        <option value="linguistics">Linguistics</option>
+                        <option value="consciousness">Consciousness</option>
+                        <option value="chronopsychology">Chronopsychology</option>
+                        <option value="technology">Technology</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Word Stats Summary -->
+            <div id="word-stats-summary" class="word-stats-summary">
+                <div class="word-stat-card">
+                    <span class="word-stat-number" id="total-words">--</span>
+                    <span class="word-stat-label">Total Words</span>
+                </div>
+                <div class="word-stat-card">
+                    <span class="word-stat-number" id="unique-words">--</span>
+                    <span class="word-stat-label">Unique Words</span>
+                </div>
+                <div class="word-stat-card">
+                    <span class="word-stat-number" id="avg-words-article">--</span>
+                    <span class="word-stat-label">Avg Words/Article</span>
+                </div>
+                <div class="word-stat-card">
+                    <span class="word-stat-number" id="vocabulary-richness">--</span>
+                    <span class="word-stat-label">Vocabulary Richness</span>
+                </div>
+            </div>
+
+            <!-- Word Frequency Panels -->
+            <div class="word-panels">
+                <!-- Top Words -->
+                <div class="word-panel">
+                    <h4>Most Frequent Terms</h4>
+                    <div id="top-words" class="word-list">
+                        <p class="empty-state">Click "Analyze Content" to generate statistics</p>
+                    </div>
+                </div>
+
+                <!-- Domain Terms -->
+                <div class="word-panel">
+                    <h4>Domain-Specific Terms</h4>
+                    <div id="domain-terms" class="word-list">
+                        <p class="empty-state">Domain terms will appear here</p>
+                    </div>
+                </div>
+
+                <!-- Word Cloud -->
+                <div class="word-panel word-cloud-panel">
+                    <h4>Word Cloud</h4>
+                    <div id="word-cloud" class="word-cloud">
+                        <p class="empty-state">Word cloud will appear here</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Articles by Word Count -->
+            <div class="articles-word-count">
+                <h4>Articles by Word Count</h4>
+                <div id="articles-by-words" class="articles-bars">
+                    <p class="empty-state">Article word counts will appear here</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Execution Logs Section -->
+        <section class="card logs-section">
+            <div class="logs-header">
+                <h3>Execution Logs</h3>
+                <div class="logs-controls">
+                    <select id="log-selector" onchange="loadSelectedLog()">
+                        <option value="">Select a log file...</option>
+                    </select>
+                    <button onclick="loadLatestLog()">Load Latest</button>
+                </div>
+            </div>
+
+            <!-- Log Summary -->
+            <div id="log-summary" class="log-summary hidden">
+                <div class="log-summary-grid">
+                    <div class="log-stat">
+                        <span class="log-stat-label">Session</span>
+                        <span class="log-stat-value" id="log-session">--</span>
+                    </div>
+                    <div class="log-stat">
+                        <span class="log-stat-label">Model</span>
+                        <span class="log-stat-value" id="log-model">--</span>
+                    </div>
+                    <div class="log-stat">
+                        <span class="log-stat-label">Tool Calls</span>
+                        <span class="log-stat-value" id="log-tool-count">--</span>
+                    </div>
+                    <div class="log-stat">
+                        <span class="log-stat-label">Messages</span>
+                        <span class="log-stat-value" id="log-message-count">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Timeline -->
+            <div id="activity-timeline" class="activity-timeline">
+                <p class="empty-state">Select a log file to view execution details</p>
+            </div>
+        </section>
+
+        <!-- Recent Runs Overview -->
+        <section class="card runs-section">
+            <h3>Recent Runs</h3>
+            <div id="recent-runs" class="recent-runs">
+                <p class="empty-state">Loading recent runs...</p>
+            </div>
+        </section>
+
+        <!-- Graph Section -->
+        <section class="card graph-section">
+            <div class="graph-header">
+                <h3>Article Connection Graph</h3>
+                <div class="graph-controls">
+                    <button onclick="resetGraph()">Reset View</button>
+                    <button onclick="togglePhysics()">Toggle Physics</button>
+                </div>
+            </div>
+            <div id="graph-container"></div>
+            <div id="node-details" class="node-details hidden">
+                <h4 id="detail-title">--</h4>
+                <p><strong>Type:</strong> <span id="detail-type">--</span></p>
+                <p><strong>Category:</strong> <span id="detail-category">--</span></p>
+                <p><strong>Inlinks:</strong> <span id="detail-inlinks">--</span></p>
+                <p><strong>Outlinks:</strong> <span id="detail-outlinks">--</span></p>
+                <p><strong>Created:</strong> <span id="detail-created">--</span></p>
+                <a id="detail-link" href="#" target="_blank">View Article</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Not-Wikipedia Ecosystem Monitor | Last updated: <span id="last-updated">--</span></p>
+    </footer>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,868 @@
+{
+  "_meta": {
+    "description": "Not-Wikipedia ecosystem health and structure tracking",
+    "last_validated": "2026-01-29",
+    "auto_updated_by": "ralph.sh validation step"
+  },
+  "stats": {
+    "total_articles": 104,
+    "total_internal_links": 897,
+    "broken_links": 0,
+    "orphan_articles": 2,
+    "avg_links_per_article": 8.6
+  },
+  "articles": {
+    "index": {
+      "title": "Not-Wikipedia",
+      "type": "hub",
+      "category": "meta",
+      "outlinks": 15,
+      "inlinks": 0,
+      "created": "2026-01-29"
+    },
+    "temporal-debt": {
+      "title": "Temporal Debt",
+      "type": "phenomenon",
+      "category": "chronopsychology",
+      "outlinks": 2,
+      "inlinks": 12,
+      "created": "2026-01-29"
+    },
+    "ghost-vocabulary": {
+      "title": "Ghost Vocabulary",
+      "type": "phenomenon",
+      "category": "linguistics",
+      "outlinks": 5,
+      "inlinks": 8,
+      "created": "2026-01-29"
+    },
+    "semantic-drift": {
+      "title": "Semantic Drift",
+      "type": "phenomenon",
+      "category": "linguistics",
+      "outlinks": 9,
+      "inlinks": 11,
+      "created": "2026-01-29"
+    },
+    "mnemonic-commons": {
+      "title": "Mnemonic Commons",
+      "type": "theory",
+      "category": "consciousness",
+      "outlinks": 5,
+      "inlinks": 11,
+      "created": "2026-01-29"
+    },
+    "consciousness-archaeology": {
+      "title": "Consciousness Archaeology",
+      "type": "methodology",
+      "category": "consciousness",
+      "outlinks": 4,
+      "inlinks": 12,
+      "created": "2026-01-29"
+    },
+    "lexical-half-life": {
+      "title": "Lexical Half-life",
+      "type": "theory",
+      "category": "linguistics",
+      "outlinks": 6,
+      "inlinks": 9,
+      "created": "2026-01-29"
+    },
+    "psychostrata": {
+      "title": "Psychostrata",
+      "type": "phenomenon",
+      "category": "consciousness",
+      "outlinks": 8,
+      "inlinks": 6,
+      "created": "2026-01-29"
+    },
+    "semantic-hygiene": {
+      "title": "Semantic Hygiene",
+      "type": "practice",
+      "category": "linguistics",
+      "outlinks": 7,
+      "inlinks": 7,
+      "created": "2026-01-29"
+    },
+    "echo-cartography": {
+      "title": "Echo Cartography",
+      "type": "methodology",
+      "category": "consciousness",
+      "outlinks": 11,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "chronolinguistics": {
+      "title": "Chronolinguistics",
+      "type": "field",
+      "category": "linguistics",
+      "outlinks": 10,
+      "inlinks": 5,
+      "created": "2026-01-29"
+    },
+    "collective-memory-maintenance": {
+      "title": "Collective Memory Maintenance",
+      "type": "practice",
+      "category": "consciousness",
+      "outlinks": 7,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "semantic-stratigraphy": {
+      "title": "Semantic Stratigraphy",
+      "type": "methodology",
+      "category": "linguistics",
+      "outlinks": 12,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "semantic-archaeology-recovery": {
+      "title": "Semantic Archaeology Recovery",
+      "type": "practice",
+      "category": "linguistics",
+      "outlinks": 13,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "temporal-linguistics-engineering": {
+      "title": "Temporal Linguistics Engineering",
+      "type": "practice",
+      "category": "linguistics",
+      "outlinks": 13,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "semantic-plasticity": {
+      "title": "Semantic Plasticity",
+      "type": "theory",
+      "category": "linguistics",
+      "outlinks": 14,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "linguistic-resilience": {
+      "title": "Linguistic Resilience",
+      "type": "theory",
+      "category": "linguistics",
+      "outlinks": 17,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "great-meaning-collapse": {
+      "title": "Great Meaning Collapse of 2019",
+      "type": "historical_event",
+      "category": "chronopsychology",
+      "outlinks": 14,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "oslo-lexical-decay-observatory": {
+      "title": "Oslo Lexical Decay Observatory",
+      "type": "institution",
+      "category": "linguistics",
+      "outlinks": 12,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "babel-incident": {
+      "title": "The Babel Incident",
+      "type": "case_study",
+      "category": "technology",
+      "outlinks": 13,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "marcus-chen": {
+      "title": "Marcus Chen",
+      "type": "biography",
+      "category": "chronopsychology",
+      "outlinks": 8,
+      "inlinks": 6,
+      "created": "2026-01-29"
+    },
+    "silent-hour-1997": {
+      "title": "Silent Hour of 1997",
+      "type": "historical_event",
+      "category": "chronopsychology",
+      "outlinks": 8,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "meaning-encryption": {
+      "title": "Meaning Encryption",
+      "type": "technology",
+      "category": "technology",
+      "outlinks": 10,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "st-petersburg-institute-for-emergency-linguistics": {
+      "title": "St. Petersburg Institute for Emergency Linguistics",
+      "type": "institution",
+      "category": "technology",
+      "outlinks": 11,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "prague-institute-for-liminal-studies": {
+      "title": "Prague Institute for Liminal Studies",
+      "type": "institution",
+      "category": "chronopsychology",
+      "outlinks": 15,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "semantic-forensics": {
+      "title": "Semantic Forensics",
+      "type": "methodology",
+      "category": "technology",
+      "outlinks": 10,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "temporal-debt-controversy": {
+      "title": "Temporal Debt Controversy",
+      "type": "debate",
+      "category": "chronopsychology",
+      "outlinks": 9,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "sao-paulo-deep-core-incident": {
+      "title": "São Paulo Deep Core Incident",
+      "type": "case_study",
+      "category": "consciousness",
+      "outlinks": 12,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "stratum-vii-ethics-debate": {
+      "title": "Stratum VII Research Ethics Debate",
+      "type": "debate",
+      "category": "consciousness",
+      "outlinks": 10,
+      "inlinks": 5,
+      "created": "2026-01-29"
+    },
+    "oral-tradition-dynamics": {
+      "title": "Oral Tradition Dynamics",
+      "type": "field",
+      "category": "linguistics",
+      "outlinks": 13,
+      "inlinks": 5,
+      "created": "2026-01-29"
+    },
+    "automated-narrative-erosion": {
+      "title": "Automated Narrative Erosion",
+      "type": "phenomenon",
+      "category": "technology",
+      "outlinks": 10,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "substrate-speech": {
+      "title": "Substrate Speech",
+      "type": "methodology",
+      "category": "linguistics",
+      "outlinks": 13,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "digital-folkloristics": {
+      "title": "Digital Folkloristics",
+      "type": "field",
+      "category": "technology",
+      "outlinks": 13,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "semantic-quarantine-protocols": {
+      "title": "Semantic Quarantine Protocols",
+      "type": "practice",
+      "category": "technology",
+      "outlinks": 11,
+      "inlinks": 5,
+      "created": "2026-01-29"
+    },
+    "recursive-translation-degradation": {
+      "title": "Recursive Translation Degradation",
+      "type": "phenomenon",
+      "category": "technology",
+      "outlinks": 12,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "semantic-compression-debate": {
+      "title": "Semantic Compression Debate",
+      "type": "debate",
+      "category": "technology",
+      "outlinks": 13,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "nadia-kowalczyk": {
+      "title": "Nadia Kowalczyk",
+      "type": "biography",
+      "category": "technology",
+      "outlinks": 11,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "theodoros-papadimitriou": {
+      "title": "Theodoros Papadimitriou",
+      "type": "biography",
+      "category": "technology",
+      "outlinks": 12,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "montreal-temporal-displacement": {
+      "title": "Montreal Temporal Displacement Event of 2012",
+      "type": "case_study",
+      "category": "chronopsychology",
+      "outlinks": 13,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "copenhagen-semantic-cascade": {
+      "title": "The Copenhagen Semantic Cascade",
+      "type": "historical_event",
+      "category": "technology",
+      "outlinks": 14,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "algorithmic-memory-palimpsest": {
+      "title": "Algorithmic Memory Palimpsest",
+      "type": "phenomenon",
+      "category": "technology",
+      "outlinks": 14,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "reykjavik-institute-for-boundary-consciousness": {
+      "title": "Reykjavik Institute for Boundary Consciousness",
+      "type": "institution",
+      "category": "consciousness",
+      "outlinks": 13,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "semantic-boundary-harmonics": {
+      "title": "Semantic Boundary Harmonics",
+      "type": "theory",
+      "category": "technology",
+      "outlinks": 13,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "akureyri-consciousness-breach": {
+      "title": "Akureyri Consciousness Breach",
+      "type": "case_study",
+      "category": "consciousness",
+      "outlinks": 13,
+      "inlinks": 5,
+      "created": "2026-01-29"
+    },
+    "chronological-asymmetry": {
+      "title": "Chronological Asymmetry",
+      "type": "theory",
+      "category": "chronopsychology",
+      "outlinks": 12,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "semantic-anchor-extraction": {
+      "title": "Semantic Anchor Extraction",
+      "type": "methodology",
+      "category": "technology",
+      "outlinks": 12,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "tokyo-temporal-dissonance": {
+      "title": "Tokyo Temporal Dissonance Event",
+      "type": "case_study",
+      "category": "chronopsychology",
+      "outlinks": 13,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "temporal-data-archaeology": {
+      "title": "Temporal Data Archaeology",
+      "type": "practice",
+      "category": "technology",
+      "outlinks": 11,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "liminal-consciousness-studies": {
+      "title": "Liminal Consciousness Studies",
+      "type": "field",
+      "category": "consciousness",
+      "outlinks": 11,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "temporal-metabolism": {
+      "title": "Temporal Metabolism",
+      "type": "theory",
+      "category": "chronopsychology",
+      "outlinks": 12,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "temporal-resonance-mapping": {
+      "title": "Temporal Resonance Mapping",
+      "type": "methodology",
+      "category": "consciousness",
+      "outlinks": 12,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "lisbon-centre-for-collective-temporality": {
+      "title": "Lisbon Centre for Collective Temporality",
+      "type": "institution",
+      "category": "consciousness",
+      "outlinks": 16,
+      "inlinks": 5,
+      "created": "2026-01-29"
+    },
+    "lisbon-retrograde-event": {
+      "title": "Lisbon Retrograde Event",
+      "type": "case_study",
+      "category": "chronopsychology",
+      "outlinks": 13,
+      "inlinks": 5,
+      "created": "2026-01-29"
+    },
+    "ines-marques": {
+      "title": "Ines Marques",
+      "type": "biography",
+      "category": "consciousness",
+      "outlinks": 12,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "prophetic-memory-studies": {
+      "title": "Prophetic Memory Studies",
+      "type": "field",
+      "category": "chronopsychology",
+      "outlinks": 12,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "buenos-aires-laboratory-for-temporal-cognition": {
+      "title": "Buenos Aires Laboratory for Temporal Cognition",
+      "type": "institution",
+      "category": "chronopsychology",
+      "outlinks": 14,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "kyoto-institute-for-temporal-cognition": {
+      "title": "Kyoto University Institute for Temporal Cognition",
+      "type": "institution",
+      "category": "chronopsychology",
+      "outlinks": 12,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "isabella-reyes": {
+      "title": "Isabella Reyes",
+      "type": "biography",
+      "category": "technology",
+      "outlinks": 11,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "collective-remembering-paradox": {
+      "title": "Collective Remembering Paradox",
+      "type": "debate",
+      "category": "consciousness",
+      "outlinks": 11,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "mumbai-institute-for-semantic-preservation": {
+      "title": "Mumbai Institute for Semantic Preservation",
+      "type": "institution",
+      "category": "linguistics",
+      "outlinks": 12,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "temporal-indigeneity-debate": {
+      "title": "Temporal Indigeneity Debate",
+      "type": "debate",
+      "category": "chronopsychology",
+      "outlinks": 17,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "priya-raghavan": {
+      "title": "Priya Raghavan",
+      "type": "biography",
+      "category": "linguistics",
+      "outlinks": 11,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "zurich-semantic-inversion": {
+      "title": "Zurich Semantic Inversion of 2003",
+      "type": "historical_event",
+      "category": "linguistics",
+      "outlinks": 11,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "berlin-centre-for-linguistic-preservation": {
+      "title": "Berlin Centre for Linguistic Preservation",
+      "type": "institution",
+      "category": "linguistics",
+      "outlinks": 13,
+      "inlinks": 9,
+      "created": "2026-01-29"
+    },
+    "manila-meaning-overflow": {
+      "title": "Manila Meaning Overflow of 2017",
+      "type": "historical_event",
+      "category": "technology",
+      "outlinks": 14,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "semantic-inheritance-protocols": {
+      "title": "Semantic Inheritance Protocols",
+      "type": "practice",
+      "category": "technology",
+      "outlinks": 10,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "latent-semantic-resonance": {
+      "title": "Latent Semantic Resonance",
+      "type": "phenomenon",
+      "category": "technology",
+      "outlinks": 9,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "semantic-gravity-wells": {
+      "title": "Semantic Gravity Wells",
+      "type": "phenomenon",
+      "category": "technology",
+      "outlinks": 14,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "tobias-lindqvist": {
+      "title": "Tobias Lindqvist",
+      "type": "biography",
+      "category": "technology",
+      "outlinks": 11,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "mei-lin-zhou": {
+      "title": "Mei-Lin Zhou",
+      "type": "biography",
+      "category": "technology",
+      "outlinks": 11,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "stockholm-shared-vision-event": {
+      "title": "Stockholm Shared Vision Event",
+      "type": "historical_event",
+      "category": "consciousness",
+      "outlinks": 11,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "semantic-telomere-theory": {
+      "title": "Semantic Telomere Theory",
+      "type": "theory",
+      "category": "technology",
+      "outlinks": 10,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "perceptual-boundary-calibration": {
+      "title": "Perceptual Boundary Calibration",
+      "type": "practice",
+      "category": "consciousness",
+      "outlinks": 12,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "semantic-triage-protocols": {
+      "title": "Semantic Triage Protocols",
+      "type": "practice",
+      "category": "technology",
+      "outlinks": 10,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "semantic-ecology": {
+      "title": "Semantic Ecology",
+      "type": "field",
+      "category": "linguistics",
+      "outlinks": 12,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "semantic-contagion": {
+      "title": "Semantic Contagion",
+      "type": "phenomenon",
+      "category": "technology",
+      "outlinks": 10,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "semantic-immune-response": {
+      "title": "Semantic Immune Response",
+      "type": "theory",
+      "category": "technology",
+      "outlinks": 12,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "algorithmic-semantic-authority-debate": {
+      "title": "Algorithmic Semantic Authority Debate",
+      "type": "debate",
+      "category": "technology",
+      "outlinks": 11,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "kwame-asante": {
+      "title": "Kwame Asante",
+      "type": "biography",
+      "category": "linguistics",
+      "outlinks": 12,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "elena-brandt": {
+      "title": "Elena Brandt",
+      "type": "biography",
+      "category": "linguistics",
+      "outlinks": 14,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "temporal-vocabulary-inoculation": {
+      "title": "Temporal Vocabulary Inoculation",
+      "type": "methodology",
+      "category": "linguistics",
+      "outlinks": 13,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "semantic-anesthesia": {
+      "title": "Semantic Anesthesia",
+      "type": "therapeutic_intervention",
+      "category": "consciousness",
+      "outlinks": 15,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "zagreb-semantic-fracture": {
+      "title": "Zagreb Semantic Fracture of 2011",
+      "type": "historical_event",
+      "category": "linguistics",
+      "outlinks": 11,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "temporal-recursion-analysis": {
+      "title": "Temporal Recursion Analysis",
+      "type": "methodology",
+      "category": "chronopsychology",
+      "outlinks": 13,
+      "inlinks": 7,
+      "created": "2026-01-29"
+    },
+    "temporal-rhythm-analysis": {
+      "title": "Temporal Rhythm Analysis",
+      "type": "methodology",
+      "category": "chronopsychology",
+      "outlinks": 12,
+      "inlinks": 2,
+      "created": "2026-01-29"
+    },
+    "dubrovnik-semantic-suspension": {
+      "title": "Dubrovnik Semantic Suspension of 2018",
+      "type": "historical_event",
+      "category": "consciousness",
+      "outlinks": 12,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "semantic-telemetry-networks": {
+      "title": "Semantic Telemetry Networks",
+      "type": "infrastructure",
+      "category": "technology",
+      "outlinks": 11,
+      "inlinks": 5,
+      "created": "2026-01-29"
+    },
+    "krakow-temporal-standstill": {
+      "title": "Kraków Temporal Standstill of 2015",
+      "type": "case_study",
+      "category": "chronopsychology",
+      "outlinks": 12,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "semantic-exhaustion-syndrome": {
+      "title": "Semantic Exhaustion Syndrome",
+      "type": "clinical_condition",
+      "category": "linguistics",
+      "outlinks": 13,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "geneva-memory-concordance": {
+      "title": "Geneva Memory Concordance",
+      "type": "historical_event",
+      "category": "consciousness",
+      "outlinks": 10,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "semantic-bifurcation": {
+      "title": "Semantic Bifurcation",
+      "type": "phenomenon",
+      "category": "linguistics",
+      "outlinks": 10,
+      "inlinks": 0,
+      "created": "2026-01-29"
+    },
+    "haruki-miyamoto": {
+      "title": "Haruki Miyamoto",
+      "type": "biography",
+      "category": "chronopsychology",
+      "outlinks": 14,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "semantic-occlusion-mapping": {
+      "title": "Semantic Occlusion Mapping",
+      "type": "methodology",
+      "category": "consciousness",
+      "outlinks": 12,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "semantic-masquerade-theory": {
+      "title": "Semantic Masquerade Theory",
+      "type": "theory",
+      "category": "linguistics",
+      "outlinks": 10,
+      "inlinks": 3,
+      "created": "2026-01-29"
+    },
+    "temporal-vagrancy": {
+      "title": "Temporal Vagrancy",
+      "type": "practice",
+      "category": "chronopsychology",
+      "outlinks": 14,
+      "inlinks": 0,
+      "created": "2026-01-29"
+    },
+    "cognitive-magnitude-collapse": {
+      "title": "Cognitive Magnitude Collapse",
+      "type": "clinical_condition",
+      "category": "consciousness",
+      "outlinks": 14,
+      "inlinks": 4,
+      "created": "2026-01-29"
+    },
+    "sydney-attention-collapse": {
+      "title": "Sydney Attention Collapse of 2021",
+      "type": "case_study",
+      "category": "chronopsychology",
+      "outlinks": 11,
+      "inlinks": 0,
+      "created": "2026-01-29"
+    },
+    "cognitive-inscription-lag": {
+      "title": "Cognitive Inscription Lag",
+      "type": "practice",
+      "category": "chronopsychology",
+      "outlinks": 8,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "anticipatory-semantic-retrieval": {
+      "title": "Anticipatory Semantic Retrieval",
+      "type": "practice",
+      "category": "chronopsychology",
+      "outlinks": 8,
+      "inlinks": 0,
+      "created": "2026-01-29"
+    },
+    "nikolai-volkov": {
+      "title": "Nikolai Volkov",
+      "type": "biography",
+      "category": "consciousness",
+      "outlinks": 8,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "astrid-bergstrom": {
+      "title": "Astrid Bergström",
+      "type": "biography",
+      "category": "consciousness",
+      "outlinks": 8,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    },
+    "aleksandra-horvat": {
+      "title": "Aleksandra Horvat",
+      "type": "biography",
+      "category": "chronopsychology",
+      "outlinks": 8,
+      "inlinks": 1,
+      "created": "2026-01-29"
+    }
+  },
+  "categories": {
+    "linguistics": {
+      "description": "Language, meaning, and semantic phenomena",
+      "article_count": 23,
+      "core_concepts": ["semantic-drift", "ghost-vocabulary", "lexical-half-life", "oral-tradition-dynamics", "mumbai-institute-for-semantic-preservation", "zagreb-semantic-fracture"]
+    },
+    "consciousness": {
+      "description": "Memory, awareness, and mental archaeology",
+      "article_count": 23,
+      "core_concepts": ["mnemonic-commons", "consciousness-archaeology", "psychostrata", "sao-paulo-deep-core-incident", "stratum-vii-ethics-debate", "reykjavik-institute-for-boundary-consciousness", "akureyri-consciousness-breach", "liminal-consciousness-studies", "ines-marques", "collective-remembering-paradox", "stockholm-shared-vision-event"]
+    },
+    "chronopsychology": {
+      "description": "Time perception and temporal experience",
+      "article_count": 21,
+      "core_concepts": ["temporal-debt", "temporal-debt-controversy", "great-meaning-collapse", "silent-hour-1997", "prague-institute-for-liminal-studies", "montreal-temporal-displacement", "chronological-asymmetry", "lisbon-retrograde-event", "prophetic-memory-studies", "kyoto-institute-for-temporal-cognition"]
+    },
+    "technology": {
+      "description": "Computational linguistics and AI-related semantic phenomena",
+      "article_count": 23,
+      "core_concepts": ["babel-incident", "meaning-encryption", "st-petersburg-institute-for-emergency-linguistics", "semantic-forensics", "automated-narrative-erosion", "digital-folkloristics", "semantic-quarantine-protocols", "recursive-translation-degradation", "theodoros-papadimitriou", "copenhagen-semantic-cascade", "isabella-reyes", "manila-meaning-overflow", "semantic-inheritance-protocols", "semantic-telemetry-networks"]
+    }
+  },
+  "article_types": {
+    "phenomenon": "Observable effects or occurrences (e.g., Temporal Debt, Ghost Vocabulary)",
+    "theory": "Explanatory frameworks (e.g., Lexical Half-life, Mnemonic Commons)",
+    "methodology": "Research techniques (e.g., Consciousness Archaeology, Echo Cartography)",
+    "practice": "Applied interventions (e.g., Semantic Hygiene, Collective Memory Maintenance)",
+    "field": "Academic disciplines (e.g., Chronolinguistics)",
+    "institution": "Organizations and research bodies",
+    "hub": "Index and navigation pages"
+  },
+  "expansion_priorities": {
+    "needed_types": [],
+    "underrepresented_categories": ["technology"],
+    "suggested_topics": []
+  }
+}

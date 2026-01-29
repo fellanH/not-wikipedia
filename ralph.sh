@@ -3,8 +3,8 @@ set -uo pipefail
 
 MAX_LOOPS=100  # Set to 0 for unlimited loops
 LOG_DIR=".logs"
-WIKI_DIR="not-wikipedia"
-MCP_DIR=".mcp"
+WIKI_DIR="dist/pages"
+MCP_DIR="lib/mcp"
 PROMPT_FILE="PROMPT.md"
 LOCK_FILE="/tmp/ralph.lock"
 MAX_LOGS=100  # Keep only last 100 log files
@@ -161,7 +161,7 @@ EOF
   cat >> "$PROMPT_FILE" << EOF
 
 ---
-Output: \`not-wikipedia/*.html\`
+Output: \`dist/pages/*.html\`
 Template: [CONTRIBUTING.md](CONTRIBUTING.md)
 Color: ${infobox_color}
 EOF
@@ -345,10 +345,10 @@ quick_health_check() {
 # UPDATE ECOSYSTEM STATS
 # =============================================================================
 update_ecosystem_stats() {
-  if [[ -f "meta/ecosystem.json" ]]; then
-    sed -i.bak "s/\"last_validated\": \"[^\"]*\"/\"last_validated\": \"$(date +%Y-%m-%d)\"/" meta/ecosystem.json
-    rm -f meta/ecosystem.json.bak
-    echo -e "${GREEN}✓${NC} Updated meta/ecosystem.json" >&2
+  if [[ -f "lib/meta/ecosystem.json" ]]; then
+    sed -i.bak "s/\"last_validated\": \"[^\"]*\"/\"last_validated\": \"$(date +%Y-%m-%d)\"/" lib/meta/ecosystem.json
+    rm -f lib/meta/ecosystem.json.bak
+    echo -e "${GREEN}✓${NC} Updated lib/meta/ecosystem.json" >&2
   fi
 }
 
@@ -416,12 +416,12 @@ while :; do
   ) &
   timer_pid=$!
 
-  # Run Claude with PROMPT.md (restricted to PROMPT.md, CONTRIBUTING.md, and not-wikipedia/)
+  # Run Claude with PROMPT.md (restricted to PROMPT.md, CONTRIBUTING.md, and dist/pages/)
   claude -p --verbose --output-format stream-json \
     --allowedTools "Edit,Write,Read,Glob,Grep,Bash" \
     --add-dir "$PWD/PROMPT.md" \
     --add-dir "$PWD/CONTRIBUTING.md" \
-    --add-dir "$PWD/not-wikipedia" \
+    --add-dir "$PWD/dist/pages" \
     --include-partial-messages --dangerously-skip-permissions \
     < "$PROMPT_FILE" > "$log_file" 2>&1
   claude_exit=$?

@@ -1,64 +1,78 @@
-# Not-Wikipedia HTML Structure
+# Creating Not-Wikipedia Articles
 
-## Template
+## MCP Tools
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Article Title - Wikipedia</title>
-    <link rel="stylesheet" href="wiki-common.css">
-    <style>
-        .infobox-title { background-color: #INFOBOX_COLOR; }
-    </style>
-</head>
-<body>
-    <div id="content">
-        <h1 id="firstHeading">Article Title</h1>
-        <div id="siteSub">From Wikipedia, the free encyclopedia</div>
+Use these tools to create and manage articles programmatically.
 
-        <div class="ambox ambox-warning">
-            <strong>Warning:</strong> ...
-        </div>
+### `wiki_create_article` - Create new articles
 
-        <table class="infobox">
-            <tr><td colspan="2" class="infobox-title">Title</td></tr>
-            <tr><th scope="row">Field</th><td>Value</td></tr>
-        </table>
+Creates a new article with proper HTML structure.
 
-        <p>Lead paragraph...</p>
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `title` | Yes | Article title (e.g., "Semantic Drift") |
+| `content` | Yes | Article body using markdown formatting |
+| `topic` | No | Seed phrase to guide article topic |
+| `infobox_color` | No | Hex color for infobox (e.g., `#7b9e89`) |
+| `infobox_fields` | No | Key-value pairs for the infobox |
+| `categories` | No | List of category names |
+| `see_also` | No | List of related article filenames |
+| `warning_message` | No | Warning text for an ambox |
 
-        <div id="toc">
-            <h2>Contents</h2>
-            <ul>
-                <li><a href="#Section1">1 Section</a></li>
-            </ul>
-        </div>
+### `wiki_edit_article` - Modify existing articles
 
-        <h2 id="Section1">Section<span class="mw-editsection">[<a href="?action=edit">edit</a>]</span></h2>
-        <p>Content with <a href="other-article.html">links</a>...</p>
+Edit articles with structured operations.
 
-        <h2 id="See_also">See also</h2>
-        <ul>
-            <li><a href="related.html">Related</a></li>
-        </ul>
+| Operation | Parameters | Description |
+|-----------|------------|-------------|
+| `add_section` | `section_title`, `content`, `after_section` | Add a new section |
+| `update_section` | `section_id`, `content` | Replace section content |
+| `append_see_also` | `link` | Add to See Also section |
+| `update_infobox` | `infobox_field`, `infobox_value` | Add/update infobox field |
+| `add_category` | `category` | Add a category |
+| `set_warning` | `warning` | Set/update warning ambox |
+| `append_content` | `content` | Append paragraph before See Also |
 
-        <h2 id="References">References</h2>
-        <ol class="reflist">
-            <li id="cite1"><b>^</b> Citation.</li>
-        </ol>
+### `wiki_add_link` - Cross-reference articles
 
-        <div id="catlinks">
-            <b>Categories:</b> <a href="#">Category</a>
-        </div>
-    </div>
-</body>
-</html>
+Create links between articles.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `source` | Yes | Source article filename |
+| `target` | Yes | Target article to link to |
+| `link_type` | No | `see_also`, `inline`, or `both` (default: `see_also`) |
+| `bidirectional` | No | Also add reverse link (default: false) |
+| `anchor_text` | No | Text to convert to inline link |
+| `in_section` | No | Limit inline search to this section |
+
+### `wiki_get_article` - Parse article metadata
+
+Returns structured data about an article: title, sections, links, infobox, categories, word count.
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `filename` | Yes | Article filename |
+| `include_content_preview` | No | Include section previews (default: true) |
+| `include_links` | No | Include link analysis (default: true) |
+
+## Content Formatting
+
+Use markdown-style formatting in content:
+
+```markdown
+## Section Header
+### Subsection
+
+This is a paragraph with **bold** and *italic* text.
+
+- Bullet point one
+- Bullet point two
+
+Link to [another article](semantic-drift.html).
 ```
 
-## Visual Style
+## Visual Style Reference
 
 | Property | Value |
 |----------|-------|

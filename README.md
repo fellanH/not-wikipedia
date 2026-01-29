@@ -124,6 +124,8 @@ Edit variables at the top of `ralph.sh`:
 | `MAX_LOOPS` | 100 | Maximum iterations (0 = unlimited) |
 | `MAX_LOGS` | 100 | Log files to keep |
 | `WIKI_DIR` | not-wikipedia | Article output directory |
+| `MAX_DISCOVERY_DEPTH` | 3 | Maximum recursion depth for Content Fractal |
+| `HEALTH_CHECK_INTERVAL` | 5 | Full health check every N loops |
 
 ## Task Types
 
@@ -143,11 +145,76 @@ Edit variables at the top of `ralph.sh`:
 ## How It Works
 
 1. **Health Check** — Scans for broken links, orphans, and placeholders
-2. **Fetch Task** — Gets next task from MCP tool (prioritizes repairs)
+2. **Fetch Task** — Gets next task from MCP tool (prioritizes discovery queue → broken links → fresh seeds)
 3. **Generate Prompt** — Writes task details to `PROMPT.md`
 4. **Run Claude** — Executes `claude -p` with the prompt
-5. **Validate** — Post-loop health check
-6. **Repeat**
+5. **Recursive Discovery** — Scans new article for concepts and queues them
+6. **Validate** — Post-loop health check
+7. **Repeat**
+
+---
+
+## Recursive Discovery (Content Fractal)
+
+Ralph uses **Recursive Discovery** to transform from a reactive system (fixing broken links one at a time) into an **explosive growth engine** (each article spawns multiple new concepts).
+
+### How It Works
+
+```
+Article A is created
+       ↓
+Discovery scans A, finds links to [B, C, D]
+       ↓
+B, C, D are queued at depth 1
+       ↓
+Article B is created (from queue)
+       ↓
+Discovery scans B, finds links to [E, F]
+       ↓
+E, F are queued at depth 2
+       ↓
+... continues until max depth reached
+```
+
+### Priority System
+
+The discovery queue uses intelligent prioritization:
+
+| Factor | Effect |
+|--------|--------|
+| Lower depth | Higher priority (closer to root concepts) |
+| Multiple references | Higher priority (more demanded) |
+| Queue order | FIFO within same priority |
+
+### Configuration
+
+Edit `ralph.sh` to adjust:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MAX_DISCOVERY_DEPTH` | 3 | Maximum recursion layers |
+
+### Relevance Filtering
+
+To prevent topic drift (e.g., starting at "Linguistics" and ending at "Quantum Mechanics"), the discovery tool supports optional filters:
+
+```javascript
+// Example: Stay focused on linguistics topics
+{
+  relevance_filter: {
+    required_keywords: ["linguistic", "language", "semantic"],
+    excluded_keywords: ["quantum", "physics"],
+    min_filename_length: 8
+  }
+}
+```
+
+### Safeguards
+
+- **Depth Limit**: Prevents infinite recursion (default: 3 layers)
+- **Duplicate Detection**: Already-queued concepts are skipped
+- **Article Existence Check**: Existing articles are not re-queued
+- **Priority Decay**: Deeper concepts have lower priority
 
 Each generated article includes:
 - Wikipedia-style warning box (unique per article)
