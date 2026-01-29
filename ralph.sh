@@ -138,73 +138,32 @@ update_prompt() {
   echo -e "${CYAN}Infobox Color:${NC} $infobox_color" >&2
   echo -e "${BLUE}══════════════════════════════════════════${NC}\n" >&2
 
-  # Write PROMPT.md (minimal - agent determines content from context)
-  cat > "$PROMPT_FILE" << EOF
-# Contribute to Not-Wikipedia
+  # Write PROMPT.md (ultra-minimal - seed + output path only)
+  cat > "$PROMPT_FILE" << 'HEADER'
+# Not-Wikipedia
+HEADER
 
-> Generated: ${timestamp}
-
-## Task
-
-| Field | Value |
-|-------|-------|
-| Type | ${task_type} |
-| Priority | ${priority} |
-| Infobox Color | ${infobox_color} |
-EOF
-
-  # Add task-specific content
-  if [[ "$task_type" == "create_new" ]]; then
+  # Add only the seed/context - no task type labels, no steering
+  if [[ "$task_type" == "create_new" && -n "$human_seed_text" ]]; then
     cat >> "$PROMPT_FILE" << EOF
-
-## Human Seed
 
 > "${human_seed_text}"
->
 > — ${human_seed_source}
-
-Use this passage as creative inspiration. Derive the topic, article type, thematic direction, and any researchers entirely from your interpretation. The connection can be metaphorical, tangential, or abstracted.
 EOF
-  elif [[ "$task_type" == "repair_broken_link" ]]; then
+  elif [[ -n "$topic_context" ]]; then
     cat >> "$PROMPT_FILE" << EOF
-
-## Target
-
-Create the missing article: **${topic_name}**
-
-${topic_context}
-
-Read the referencing articles to understand what this page should contain. Infer the article type, content, and any researchers from the context in which this link appears.
-EOF
-  elif [[ "$task_type" == "resolve_placeholder" ]]; then
-    cat >> "$PROMPT_FILE" << EOF
-
-## Target
-
-${topic_context}
-
-Read the file to understand the context and replace NEXT_PAGE_PLACEHOLDER with an appropriate link.
-EOF
-  elif [[ "$task_type" == "fix_orphan" ]]; then
-    cat >> "$PROMPT_FILE" << EOF
-
-## Target
-
-Add incoming links to: **${topic_name}**
 
 ${topic_context}
 EOF
   fi
 
+  # Minimal output info
   cat >> "$PROMPT_FILE" << EOF
 
-## Guidelines
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for HTML template and style guide.
-
-## Vocabulary Reminder
-
-**Avoid word repetition.** Limit specialized terms (semantic, temporal, consciousness, framework, protocol, phenomenon) to 3-5 uses each. Use synonyms, concrete details, and varied sentence structures. Every article should read distinctly—not as a template with swapped terms.
+---
+Output: \`not-wikipedia/*.html\`
+Template: [CONTRIBUTING.md](CONTRIBUTING.md)
+Color: ${infobox_color}
 EOF
 
   echo -e "${GREEN}✓${NC} Updated ${PROMPT_FILE}" >&2
@@ -333,32 +292,6 @@ health_check() {
     echo -e "${GREEN}✓${NC} No orphan articles" >&2
   else
     echo -e "${YELLOW}!${NC} Found $orphans orphan articles" >&2
-  fi
-
-  # -------------------------------------------------------------------------
-  # Word density check (only on 5 most recent files - acceptable as-is)
-  # -------------------------------------------------------------------------
-  echo -e "\n${YELLOW}Checking word density (recent files)...${NC}" >&2
-  local density_issues=0
-  local overused_terms="semantic temporal consciousness framework protocol phenomenon methodology"
-
-  for f in $(ls -t "$WIKI_DIR"/*.html 2>/dev/null | head -5); do
-    local basename_f=$(basename "$f")
-    if [[ "$basename_f" != "index.html" && "$basename_f" != "wiki-common.css" ]]; then
-      for term in $overused_terms; do
-        local count=$(grep -io "\b${term}\b" "$f" 2>/dev/null | wc -l | tr -d ' ')
-        if [[ $count -gt 10 ]]; then
-          echo -e "  ${YELLOW}DENSITY:${NC} $basename_f has '$term' $count times (limit: 10)" >&2
-          ((density_issues++))
-        fi
-      done
-    fi
-  done
-
-  if [[ $density_issues -eq 0 ]]; then
-    echo -e "${GREEN}✓${NC} Word density within limits" >&2
-  else
-    echo -e "${YELLOW}!${NC} Found $density_issues word density issues" >&2
   fi
 
   echo -e "${BLUE}══════════════════════════════════════════${NC}\n" >&2

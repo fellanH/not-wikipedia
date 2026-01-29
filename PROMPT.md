@@ -1,26 +1,9 @@
-# Contribute to Not-Wikipedia
+# Not-Wikipedia
 
-> Generated: 2026-01-29T09:14:05Z
+> "There is grandeur in this view of life, with its several powers, having been originally breathed into a few forms or into one."
+> — Charles Darwin, On the Origin of Species
 
-## Task
-
-| Field | Value |
-|-------|-------|
-| Type | create_new |
-| Priority | low |
-| Article Type |  |
-| Category |  |
-| Infobox Color | #8b7355 |
-| Researcher | None suggested |
-
-## Human Seed
-
-> "One cannot step twice in the same river."
->
-> — Heraclitus
-
-Transform this passage into a Not-Wikipedia concept. The connection can be metaphorical, tangential, or abstracted.
-
-## Guidelines
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for HTML template, style guide, and quality checklist.
+---
+Output: `not-wikipedia/*.html`
+Template: [CONTRIBUTING.md](CONTRIBUTING.md)
+Color: #e6c88a

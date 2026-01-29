@@ -1,17 +1,95 @@
 # Ralph
 
-An autonomous Claude Code loop that builds **Not-Wikipedia** — an encyclopedia of hallucinations, lost history, and abstract concepts.
+An autonomous Claude Code loop that builds **Not-Wikipedia** — a fictional encyclopedia.
 
 ## What It Does
 
-Ralph continuously runs Claude Code to generate and maintain a fictional Wikipedia-style encyclopedia. Each article mimics Wikipedia's visual style while containing entirely fabricated content — invented researchers, impossible phenomena, and conceptual frameworks that never existed.
+Ralph continuously runs Claude Code to generate and maintain a fictional Wikipedia-style encyclopedia. Each article mimics Wikipedia's visual style while containing entirely fabricated content.
 
 The system:
 - Fetches tasks via MCP tools (create articles, repair broken links, resolve placeholders, fix orphans)
-- Generates prompts from human seed passages (literary quotes, philosophical fragments)
+- Injects human seed passages as the **sole creative driver**
 - Runs Claude to create HTML articles following Wikipedia's aesthetic
 - Validates ecosystem health (broken links, orphans, unresolved placeholders)
 - Logs all runs for debugging and analysis
+
+---
+
+## Meta Rules: Non-Deterministic Generation
+
+> **Core Principle**: Maximum variance across agent iterations. The agent receives minimal context and must derive everything from the human seed alone.
+
+### Agent Context (STRICT)
+
+The agent receives ONLY:
+
+| Input | Purpose |
+|-------|---------|
+| **Human seed** | The sole creative input — a passage, quote, or text |
+| **Task type** | What action to take (`create_new`, `repair_broken_link`, etc.) |
+| **Target path** | Where to write the file |
+| **HTML template** | Structural skeleton only — no example content |
+| **CSS reference** | Visual styling (colors, fonts, layout) |
+
+**Nothing else.** No interpretation hints. No vocabulary guidance. No thematic suggestions.
+
+### Forbidden in Context Files
+
+These create deterministic patterns and MUST NOT appear:
+
+| Forbidden | Why |
+|-----------|-----|
+| Interpretation instructions | "Derive the topic from..." steers inference |
+| Vocabulary guidance | "Avoid these words..." or "Use varied..." biases output |
+| Thematic hints | "Connection can be metaphorical..." primes specific modes |
+| Category examples | Lists of topics constrain imagination |
+| Numeric requirements | "3-6 sections" creates formulas |
+| Writing style rules | "Read distinctly" is subjective instruction |
+
+### Allowed in Context Files
+
+| Allowed | Why |
+|---------|-----|
+| HTML skeleton | `<h1>`, `<table class="infobox">` — pure structure |
+| CSS styling | Colors, fonts, layout — visual only |
+| File conventions | `.html`, kebab-case — technical |
+| Link validation | "Must point to existing files" — ecosystem integrity |
+| Structural checklist | "Has infobox, has references" — binary checks |
+
+### File Responsibilities
+
+**PROMPT.md** — Generated per task, contains:
+- Task type and priority
+- Human seed (quoted, with attribution)
+- Infobox color
+- Link to CONTRIBUTING.md
+- **NOTHING ELSE**
+
+**CONTRIBUTING.md** — Static reference, contains:
+- HTML template (empty structure)
+- CSS specifications
+- File naming rules
+- Quality checklist (structural items only)
+- **NO interpretation guidance**
+- **NO writing style instructions**
+
+**ralph.sh** — Orchestration, must:
+- Generate minimal PROMPT.md
+- NOT inject guidance text
+- NOT add vocabulary reminders
+- NOT explain how to interpret the seed
+
+### Why This Matters
+
+Two agents given the same human seed should produce **completely different** articles. If they produce similar content, the prompt is too deterministic.
+
+The human seed is raw material. The agent's interpretation is unconstrained. The output is unpredictable.
+
+```
+Human Seed ─────► Agent (minimal context) ─────► Unique Article
+                        │
+                        └── No steering, no hints, no patterns
+```
 
 ## Project Structure
 
@@ -74,9 +152,9 @@ Edit variables at the top of `ralph.sh`:
 Each generated article includes:
 - Wikipedia-style warning box (unique per article)
 - Infobox with themed color
-- 3-6 content sections
-- 3-8 internal links to other Not-Wikipedia articles
-- 5-15 fictional academic references
+- Content sections
+- Internal links to other Not-Wikipedia articles
+- Academic-style references
 - Category footer
 
 ## Dashboard
