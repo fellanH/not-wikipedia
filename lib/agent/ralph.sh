@@ -5,7 +5,7 @@ set -uo pipefail
 # CONFIGURATION
 # =============================================================================
 PARALLEL_WORKERS=${PARALLEL_WORKERS:-3}  # Number of parallel agents (env override)
-MAX_LOOPS_PER_WORKER=100  # Set to 0 for unlimited loops per worker
+MAX_LOOPS_PER_WORKER=${MAX_LOOPS_PER_WORKER:-100}  # Set to 0 for unlimited loops per worker
 LOG_DIR="logs"
 WIKI_DIR="../../dist/pages"
 MCP_DIR="../mcp"
@@ -20,7 +20,9 @@ COORDINATOR_LOCK="/tmp/ralph-coordinator.lock"
 TASK_LOCK="/tmp/ralph-task.lock"
 COPY_LOCK="/tmp/ralph-copy.lock"
 WORKER_PIDS=()
+WORKER_COMPLETED=()  # Track workers that finished max loops (not crashed)
 GLOBAL_LOOP_COUNT="/tmp/ralph-loop-count"
+WORKER_DONE_DIR="/tmp/ralph-worker-done"
 
 # Colors for output (with worker prefix support)
 RED='\033[0;31m'
@@ -116,8 +118,9 @@ cleanup() {
   rmdir "$COPY_LOCK.dir" 2>/dev/null || true
   rm -f "$GLOBAL_LOOP_COUNT"
 
-  # Clean up any orphaned isolation directories
+  # Clean up any orphaned isolation directories and done markers
   rm -rf /tmp/ralph-worker-* 2>/dev/null
+  rm -rf "$WORKER_DONE_DIR" 2>/dev/null
 
   release_coordinator_lock
   echo -e "${GREEN}✓${NC} Shutdown complete" >&2
@@ -473,6 +476,11 @@ run_worker() {
     # Generate log file path
     local log_file="$LOG_DIR/run-$(date +%Y%m%d-%H%M%S)-w${worker_id}-loop${worker_loop}.json"
 
+    # Snapshot files in wiki directory BEFORE running agent
+    # (MCP tools write directly here, bypassing isolation)
+    local snapshot_file=$(mktemp)
+    find "$WIKI_DIR" -maxdepth 1 -name "*.html" -type f | sort > "$snapshot_file"
+
     # Run Claude in isolated environment
     log_info "Running Claude agent..."
     claude -p --verbose --output-format stream-json \
@@ -487,29 +495,56 @@ run_worker() {
 
     log "Completed in $((elapsed/60))m $((elapsed%60))s (exit: $claude_exit)"
 
-    # Get the most recent file before teardown for discovery
+    # Detect new files by comparing before/after snapshots
+    # This works whether agent uses MCP tools or Write tool
     local new_article=""
+    local after_file=$(mktemp)
+    find "$WIKI_DIR" -maxdepth 1 -name "*.html" -type f | sort > "$after_file"
+
+    # Find files in after that aren't in before (new files)
+    local new_files
+    new_files=$(comm -13 "$snapshot_file" "$after_file")
+    rm -f "$snapshot_file" "$after_file"
+
+    if [[ -n "$new_files" ]]; then
+      # Get the first new file (usually just one per loop)
+      new_article=$(basename "$(echo "$new_files" | head -1)")
+      log_success "New article detected: $new_article"
+    fi
+
+    # Also check isolation dir for files created via Write tool
     for f in "$isolation_dir/dist/pages"/*.html; do
       if [[ -f "$f" && ! -L "$f" ]]; then
-        new_article=$(basename "$f")
-        break
+        local iso_article=$(basename "$f")
+        if [[ -z "$new_article" ]]; then
+          new_article="$iso_article"
+        fi
+        # Copy from isolation to wiki dir
+        cp "$f" "$WIKI_DIR/$iso_article"
+        log_success "Copied from isolation: $iso_article"
       fi
     done
 
-    # Teardown isolation and copy results
-    teardown_isolation "$isolation_dir" "$claude_exit"
+    # Clean up isolation directory
+    rm -rf "$isolation_dir"
     isolation_dir=""
+    log_success "Isolated environment cleaned up"
 
-    # Run discovery for new article
+    # Run discovery and publish for new article
     if [[ -n "$new_article" ]]; then
       run_discovery "$new_article"
       # Publish to content repo for auto-deployment
       publish_article "$new_article"
+    else
+      log_warn "No new article detected"
     fi
 
     # Check loop limit
     if [[ $MAX_LOOPS_PER_WORKER -gt 0 && $worker_loop -ge $MAX_LOOPS_PER_WORKER ]]; then
       log "Reached max loops ($MAX_LOOPS_PER_WORKER). Worker exiting."
+      # Mark this worker as completed (not crashed)
+      mkdir -p "$WORKER_DONE_DIR"
+      touch "$WORKER_DONE_DIR/worker-$worker_id"
       break
     fi
 
@@ -545,8 +580,9 @@ health_check
 echo -e "${CYAN}Spawning $PARALLEL_WORKERS parallel workers...${NC}" >&2
 for ((i=1; i<=PARALLEL_WORKERS; i++)); do
   run_worker "$i" &
-  WORKER_PIDS+=($!)
-  echo -e "  ${GREEN}✓${NC} Started worker $i (PID: ${WORKER_PIDS[-1]})" >&2
+  local_pid=$!
+  WORKER_PIDS+=($local_pid)
+  echo -e "  ${GREEN}✓${NC} Started worker $i (PID: $local_pid)" >&2
 done
 
 echo "" >&2
@@ -556,21 +592,46 @@ echo "" >&2
 
 # Monitor loop - periodically check health and restart dead workers
 health_check_counter=0
+mkdir -p "$WORKER_DONE_DIR"
+
 while :; do
   sleep 10
   ((health_check_counter++))
 
-  # Check for dead workers and restart them
+  # Count completed and active workers
+  completed_count=0
+  active_count=0
+
+  # Check for dead workers and restart them (unless they completed normally)
   for i in "${!WORKER_PIDS[@]}"; do
     pid="${WORKER_PIDS[$i]}"
-    if ! ps -p "$pid" > /dev/null 2>&1; then
-      worker_id=$((i + 1))
-      echo -e "${YELLOW}Worker $worker_id (PID: $pid) died. Restarting...${NC}" >&2
+    worker_id=$((i + 1))
+
+    if [[ -f "$WORKER_DONE_DIR/worker-$worker_id" ]]; then
+      # Worker completed its max loops normally
+      ((completed_count++))
+      continue
+    fi
+
+    if ps -p "$pid" > /dev/null 2>&1; then
+      # Worker still running
+      ((active_count++))
+    else
+      # Worker died (crashed) - restart it
+      echo -e "${YELLOW}Worker $worker_id (PID: $pid) crashed. Restarting...${NC}" >&2
       run_worker "$worker_id" &
       WORKER_PIDS[$i]=$!
       echo -e "${GREEN}✓${NC} Restarted worker $worker_id (new PID: ${WORKER_PIDS[$i]})" >&2
+      ((active_count++))
     fi
   done
+
+  # Exit if all workers have completed their max loops
+  if [[ $MAX_LOOPS_PER_WORKER -gt 0 && $completed_count -eq $PARALLEL_WORKERS ]]; then
+    echo -e "${GREEN}All workers completed their max loops. Shutting down.${NC}" >&2
+    rm -rf "$WORKER_DONE_DIR"
+    break
+  fi
 
   # Periodic health check
   if [[ $((health_check_counter % HEALTH_CHECK_INTERVAL)) -eq 0 ]]; then
