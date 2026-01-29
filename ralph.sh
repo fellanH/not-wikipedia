@@ -8,6 +8,7 @@ MCP_DIR=".mcp"
 PROMPT_FILE="PROMPT.md"
 LOCK_FILE="/tmp/ralph.lock"
 MAX_LOGS=100  # Keep only last 100 log files
+HEALTH_CHECK_INTERVAL=5  # Full health check every N loops (1 = every loop)
 timer_pid=""
 
 # Colors for output
@@ -210,7 +211,9 @@ EOF
 }
 
 # =============================================================================
-# ECOSYSTEM HEALTH CHECK
+# ECOSYSTEM HEALTH CHECK (Optimized: Single-pass O(n) algorithm)
+# Compatible with bash 3.2+ (no associative arrays)
+# Scales linearly: O(n) vs original O(n²) for orphan detection
 # =============================================================================
 health_check() {
   echo -e "\n${BLUE}══════════════════════════════════════════${NC}" >&2
@@ -219,54 +222,112 @@ health_check() {
 
   local issues=0
 
-  # Count articles
-  local article_count=$(find "$WIKI_DIR" -name "*.html" -type f | wc -l | tr -d ' ')
+  # -------------------------------------------------------------------------
+  # Create temp files for set operations (bash 3.2 compatible)
+  # -------------------------------------------------------------------------
+  local tmp_dir=$(mktemp -d)
+  trap "rm -rf '$tmp_dir'" RETURN
+
+  local tmp_files="$tmp_dir/files"
+  local tmp_all_links="$tmp_dir/all_links"
+  local tmp_incoming="$tmp_dir/incoming"
+
+  # -------------------------------------------------------------------------
+  # OPTIMIZATION 1: Build file existence set once
+  # -------------------------------------------------------------------------
+  find "$WIKI_DIR" -maxdepth 1 -name "*.html" -type f -exec basename {} \; 2>/dev/null | sort > "$tmp_files"
+
+  local article_count=$(wc -l < "$tmp_files" | tr -d ' ')
   echo -e "${GREEN}✓${NC} Articles: $article_count" >&2
 
-  # Check for broken internal links
-  echo -e "\n${YELLOW}Checking internal links...${NC}" >&2
+  # -------------------------------------------------------------------------
+  # OPTIMIZATION 2: Single-pass extraction of all links + placeholders
+  # Extract all href links and incoming link targets in one grep pass per file
+  # -------------------------------------------------------------------------
+  echo -e "\n${YELLOW}Scanning ecosystem (single-pass)...${NC}" >&2
+
+  local placeholders=0
+  local placeholder_files=""
+
+  # Extract all links from all files in parallel, with source tracking
+  > "$tmp_all_links"
+  > "$tmp_incoming"
+
+  while IFS= read -r basename_f; do
+    local f="$WIKI_DIR/$basename_f"
+
+    # Check placeholders (fast string match)
+    if grep -q "NEXT_PAGE_PLACEHOLDER" "$f" 2>/dev/null; then
+      local count=$(grep -c "NEXT_PAGE_PLACEHOLDER" "$f" 2>/dev/null || echo 0)
+      placeholders=$((placeholders + count))
+      placeholder_files="$placeholder_files $basename_f"
+    fi
+
+    # Extract links: output "source|target" for broken link check
+    grep -oE 'href="[^"]*\.html"' "$f" 2>/dev/null | sed 's/href="//;s/"$//' | while read -r link; do
+      echo "$basename_f|$link" >> "$tmp_all_links"
+      echo "$link" >> "$tmp_incoming"
+    done
+  done < "$tmp_files"
+
+  # -------------------------------------------------------------------------
+  # OPTIMIZATION 3: Batch broken link detection using comm
+  # Instead of checking each link individually, use set difference
+  # -------------------------------------------------------------------------
   local broken_links=0
-  for f in "$WIKI_DIR"/*.html; do
-    if [[ -f "$f" ]]; then
-      while IFS= read -r link; do
-        if [[ -n "$link" && ! -f "$WIKI_DIR/$link" ]]; then
-          echo -e "  ${RED}BROKEN:${NC} $(basename "$f") -> $link" >&2
+
+  if [[ -s "$tmp_all_links" ]]; then
+    # Extract unique link targets and find which don't exist
+    cut -d'|' -f2 "$tmp_all_links" | sort -u > "$tmp_dir/link_targets"
+    local broken_targets=$(comm -23 "$tmp_dir/link_targets" "$tmp_files")
+
+    if [[ -n "$broken_targets" ]]; then
+      echo -e "${RED}✗${NC} Broken links found:" >&2
+      # For each broken target, find which files reference it
+      for target in $broken_targets; do
+        grep "|${target}$" "$tmp_all_links" | cut -d'|' -f1 | sort -u | while read -r src; do
+          echo -e "  ${RED}BROKEN:${NC} $src -> $target" >&2
           ((broken_links++))
-        fi
-      done < <(grep -oE 'href="[^"]*\.html"' "$f" 2>/dev/null | sed 's/href="//;s/"$//')
+        done
+      done
+      ((issues++))
+    else
+      echo -e "${GREEN}✓${NC} No broken links" >&2
     fi
-  done
-
-  if [[ $broken_links -eq 0 ]]; then
+  else
     echo -e "${GREEN}✓${NC} No broken links" >&2
-  else
-    echo -e "${RED}✗${NC} Found $broken_links broken links" >&2
-    ((issues++))
   fi
 
-  # Check for unresolved placeholders
-  echo -e "\n${YELLOW}Checking for placeholders...${NC}" >&2
-  local placeholders=$(grep -r "NEXT_PAGE_PLACEHOLDER" "$WIKI_DIR" 2>/dev/null | wc -l | tr -d ' ')
-  if [[ $placeholders -eq 0 ]]; then
+  # Report placeholders
+  if [[ $placeholders -gt 0 ]]; then
+    echo -e "${RED}✗${NC} Found $placeholders unresolved placeholders in:$placeholder_files" >&2
+    ((issues++))
+  else
     echo -e "${GREEN}✓${NC} No unresolved placeholders" >&2
-  else
-    echo -e "${RED}✗${NC} Found $placeholders unresolved placeholders" >&2
-    ((issues++))
   fi
 
-  # Check for orphan articles
+  # -------------------------------------------------------------------------
+  # OPTIMIZATION 4: O(n) orphan detection using set difference
+  # Files with no incoming links = all_files - files_with_incoming_links
+  # (Previously O(n²) - grepped all files for each file)
+  # -------------------------------------------------------------------------
   echo -e "\n${YELLOW}Checking for orphan articles...${NC}" >&2
+
   local orphans=0
-  for f in "$WIKI_DIR"/*.html; do
-    local basename_f=$(basename "$f")
+
+  if [[ -s "$tmp_incoming" ]]; then
+    sort -u "$tmp_incoming" > "$tmp_dir/has_incoming"
+  else
+    > "$tmp_dir/has_incoming"
+  fi
+
+  # Find orphans (files with no incoming links, excluding index.html)
+  while IFS= read -r basename_f; do
     if [[ "$basename_f" != "index.html" ]]; then
-      local incoming=$(grep -l "href=\"$basename_f\"" "$WIKI_DIR"/*.html 2>/dev/null | wc -l | tr -d ' ')
-      if [[ $incoming -eq 0 ]]; then
-        echo -e "  ${YELLOW}ORPHAN:${NC} $basename_f" >&2
-        ((orphans++))
-      fi
+      ((orphans++))
+      echo -e "  ${YELLOW}ORPHAN:${NC} $basename_f" >&2
     fi
-  done
+  done < <(comm -23 "$tmp_files" "$tmp_dir/has_incoming" 2>/dev/null)
 
   if [[ $orphans -eq 0 ]]; then
     echo -e "${GREEN}✓${NC} No orphan articles" >&2
@@ -274,8 +335,10 @@ health_check() {
     echo -e "${YELLOW}!${NC} Found $orphans orphan articles" >&2
   fi
 
-  # Check for word density issues in recent articles
-  echo -e "\n${YELLOW}Checking word density...${NC}" >&2
+  # -------------------------------------------------------------------------
+  # Word density check (only on 5 most recent files - acceptable as-is)
+  # -------------------------------------------------------------------------
+  echo -e "\n${YELLOW}Checking word density (recent files)...${NC}" >&2
   local density_issues=0
   local overused_terms="semantic temporal consciousness framework protocol phenomenon methodology"
 
@@ -299,6 +362,48 @@ health_check() {
   fi
 
   echo -e "${BLUE}══════════════════════════════════════════${NC}\n" >&2
+
+  return $issues
+}
+
+# =============================================================================
+# QUICK HEALTH CHECK (Only checks most recent file - for use between full checks)
+# =============================================================================
+quick_health_check() {
+  echo -e "\n${BLUE}── Quick Health Check ──${NC}" >&2
+
+  # Get most recently modified HTML file
+  local recent_file
+  recent_file=$(ls -t "$WIKI_DIR"/*.html 2>/dev/null | head -1)
+
+  if [[ -z "$recent_file" ]]; then
+    echo -e "${GREEN}✓${NC} No files to check" >&2
+    return 0
+  fi
+
+  local basename_f=$(basename "$recent_file")
+  local issues=0
+
+  # Check this file for broken links
+  local content
+  content=$(< "$recent_file")
+
+  while IFS= read -r link; do
+    if [[ -n "$link" && ! -f "$WIKI_DIR/$link" ]]; then
+      echo -e "  ${RED}BROKEN:${NC} $basename_f -> $link" >&2
+      ((issues++))
+    fi
+  done < <(echo "$content" | grep -oE 'href="[^"]*\.html"' 2>/dev/null | sed 's/href="//;s/"$//')
+
+  # Check for placeholders
+  if [[ "$content" == *"NEXT_PAGE_PLACEHOLDER"* ]]; then
+    echo -e "  ${YELLOW}PLACEHOLDER:${NC} Found in $basename_f" >&2
+    ((issues++))
+  fi
+
+  if [[ $issues -eq 0 ]]; then
+    echo -e "${GREEN}✓${NC} Recent file ($basename_f) looks good" >&2
+  fi
 
   return $issues
 }
@@ -349,8 +454,12 @@ while :; do
   echo "Log: $log_file" >&2
   echo "==========================================" >&2
 
-  # Run health check
-  health_check
+  # Run health check (full check every N loops, quick check otherwise)
+  if [[ $((loop_count % HEALTH_CHECK_INTERVAL)) -eq 1 || $HEALTH_CHECK_INTERVAL -eq 1 ]]; then
+    health_check
+  else
+    quick_health_check
+  fi
 
   # Fetch task from MCP tool
   task_json=$(fetch_task)
@@ -398,10 +507,10 @@ while :; do
   # Update ecosystem stats
   update_ecosystem_stats
 
-  # Post-loop health check
+  # Post-loop validation (quick check on recent file only)
   echo "" >&2
   echo "Post-loop validation:" >&2
-  health_check
+  quick_health_check
 
   if [[ $MAX_LOOPS -gt 0 && $loop_count -ge $MAX_LOOPS ]]; then
     echo "Reached max loops ($MAX_LOOPS). Exiting." >&2
