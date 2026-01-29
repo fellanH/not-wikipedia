@@ -8,6 +8,7 @@ import { ToolModule } from "../types.js";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { WIKI_DIR, INFOBOX_COLORS } from "../config.js";
+import { insertArticle } from "../db/database.js";
 
 interface ArticleInput {
   title: string;
@@ -175,6 +176,26 @@ export const tool: ToolModule = {
       try { await fs.access(filepath); return { content: [{ type: "text", text: `Error: '${filename}' already exists` }], isError: true }; } catch { /* ok */ }
 
       await fs.writeFile(filepath, html, "utf-8");
+
+      // Register article in database
+      const category = input.categories?.[0]?.toLowerCase() || "technology";
+      const outlinks = (content.match(/\]\([^)]+\.html\)/g) || []).length + (input.see_also?.length || 0);
+
+      try {
+        insertArticle({
+          filename,
+          title,
+          type: "article",
+          category,
+          outlinks,
+          inlinks: 0,
+          created: new Date().toISOString()
+        });
+      } catch (dbErr) {
+        // Article may already exist in DB - not fatal
+        console.error("DB registration warning:", dbErr);
+      }
+
       return { content: [{ type: "text", text: JSON.stringify({ success: true, filename, title, message: `Created ${filename}` }, null, 2) }] };
     } catch (e) {
       return { content: [{ type: "text", text: `Error: ${e instanceof Error ? e.message : e}` }], isError: true };

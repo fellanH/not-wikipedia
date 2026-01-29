@@ -15,20 +15,6 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { ToolModule, ToolHandler } from "../types.js";
 
-// Import all tools
-// Each tool exports a `tool` object with definition and handler
-import { tool as helloWorld } from "./hello-world.js";
-import { tool as timestamp } from "./timestamp.js";
-import { tool as uuid } from "./uuid.js";
-import { tool as base64 } from "./base64.js";
-import { tool as hash } from "./hash.js";
-import { tool as jsonFormat } from "./json-format.js";
-import { tool as envInfo } from "./env-info.js";
-import { tool as textStats } from "./text-stats.js";
-import { tool as regexTest } from "./regex-test.js";
-import { tool as randomString } from "./random-string.js";
-import { tool as shellCommand } from "./shell-command.js";
-
 // Wiki ecosystem tools
 import { tool as wikiEcosystem } from "./wiki-ecosystem.js";
 import { tool as wikiRandomTopic } from "./wiki-random-topic.js";
@@ -47,20 +33,7 @@ import { tool as wikiGenerateFragment } from "./wiki-generate-fragment.js";
 import { tool as wikiCrawl404s } from "./wiki-crawl-404s.js";
 
 // Register all tools here
-// Add your custom tools to this array
 const toolModules: ToolModule[] = [
-  helloWorld,
-  timestamp,
-  uuid,
-  base64,
-  hash,
-  jsonFormat,
-  envInfo,
-  textStats,
-  regexTest,
-  randomString,
-  shellCommand,
-  // Wiki ecosystem tools
   wikiEcosystem,
   wikiRandomTopic,
   wikiResearcher,
