@@ -158,22 +158,13 @@ setup_isolation() {
   local iso_dir=$(mktemp -d "/tmp/ralph-worker${worker_id}-loop${loop_num}-XXXXXX")
   log_info "Setting up isolated environment: ${iso_dir}"
 
-  # Create directory structure
+  # Create directory structure (empty - no existing articles visible)
   mkdir -p "$iso_dir/dist/wiki"
 
-  # Copy necessary files into isolation
-  cp "CONTRIBUTING.md" "$iso_dir/" 2>/dev/null || true
+  # NOTE: We intentionally DO NOT symlink existing articles
+  # This maximizes variance by forcing the agent to work only from the human seed
 
-  # Symlink existing wiki pages (read-only reference)
-  local abs_wiki_dir
-  abs_wiki_dir=$(cd "$WIKI_DIR" 2>/dev/null && pwd)
-  if [[ -d "$abs_wiki_dir" ]]; then
-    for f in "$abs_wiki_dir"/*.html; do
-      [[ -f "$f" ]] && ln -s "$f" "$iso_dir/dist/wiki/" 2>/dev/null || true
-    done
-  fi
-
-  log_success "Isolated environment ready"
+  log_success "Isolated environment ready (empty)"
   echo "$iso_dir"
 }
 
@@ -267,58 +258,87 @@ tool.handler({ ${crawl_opts} }).then(r => console.log(r.content[0].text));
 }
 
 # =============================================================================
-# UPDATE PROMPT.md WITH TASK
+# UPDATE PROMPT.md WITH TASK (self-contained, no file reading required)
 # =============================================================================
 update_prompt() {
   local task_json="$1"
   local prompt_file="$2"
 
   # Extract fields from JSON
-  local output_path=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.outputPath || 'dist/wiki/*.html')")
   local infobox_color=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.infoboxColor || '')")
-  local seed_mode=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.seedMode || 'single')")
+  local task_type=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.taskType || 'create_new')")
+  local topic_name=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.topic?.name || '')")
+  local topic_filename=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.topic?.filename || '')")
+  local topic_context=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.topic?.context || '')")
 
-  # Extract seeds as formatted text
-  local seeds_text=$(echo "$task_json" | node -e "
-    const d = JSON.parse(require('fs').readFileSync(0, 'utf8'));
-    const seeds = d.seeds || [];
-    seeds.forEach((s, i) => {
-      if (i > 0) console.log('');
-      console.log('> \"' + s.text + '\"');
-      console.log('> — ' + s.source);
-    });
-  ")
+  # Extract human seed
+  local seed_text=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.humanSeed?.text || '')")
+  local seed_source=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.humanSeed?.source || '')")
 
   # Display task info
   log ""
   log "${BLUE}══════════════════════════════════════════${NC}"
-  log "${BLUE}   SEEDS (${seed_mode})${NC}"
+  log "${BLUE}   TASK: ${task_type}${NC}"
   log "${BLUE}══════════════════════════════════════════${NC}"
-  echo "$task_json" | node -e "
-    const d = JSON.parse(require('fs').readFileSync(0, 'utf8'));
-    (d.seeds || []).forEach(s => {
-      const preview = s.text.length > 50 ? s.text.slice(0, 50) + '...' : s.text;
-      console.log('  \"' + preview + '\"');
-    });
-  " >&2
+  if [[ -n "$seed_text" ]]; then
+    local preview="${seed_text:0:60}..."
+    log "  Seed: \"$preview\""
+  fi
+  if [[ -n "$topic_name" && "$topic_name" != "INSPIRED_BY_SEED" ]]; then
+    log "  Topic: $topic_name"
+  fi
   log "${BLUE}══════════════════════════════════════════${NC}"
 
-  # Write PROMPT.md
-  cat > "$prompt_file" << 'HEADER'
-# Not-Wikipedia
-HEADER
+  # Write minimal PROMPT.md - human seed is the primary context
+  cat > "$prompt_file" << 'PROMPT_HEADER'
+Create a fictional encyclopedia article inspired by this passage:
 
-  if [[ -n "$seeds_text" ]]; then
-    echo "" >> "$prompt_file"
-    echo "$seeds_text" >> "$prompt_file"
+PROMPT_HEADER
+
+  # Add human seed - this IS the prompt
+  if [[ -n "$seed_text" ]]; then
+    cat >> "$prompt_file" << EOF
+> "${seed_text}"
+> — ${seed_source}
+
+EOF
   fi
 
-  cat >> "$prompt_file" << EOF
+  # Add task-specific context for non-seed tasks (broken links, etc.)
+  if [[ "$task_type" != "create_new" && -n "$topic_name" ]]; then
+    cat >> "$prompt_file" << EOF
+Create article: **${topic_name}**
+Context: ${topic_context}
 
+EOF
+  fi
+
+  # Minimal MCP tool instruction
+  cat >> "$prompt_file" << EOF
 ---
-Output: \`${output_path}\`
-Template: [CONTRIBUTING.md](CONTRIBUTING.md)
-Color: ${infobox_color}
+Use this command to create the article:
+
+\`\`\`bash
+node -e "
+const { tool } = require('../mcp/dist/tools/wiki-create-article.js');
+tool.handler({
+  title: 'Your Title Here',
+  content: \\\`
+## Section One
+Your content here with **bold** and *italic*.
+
+## Section Two
+More content. Link to [other articles](other-article.html).
+\\\`,
+  infobox_color: '${infobox_color}',
+  infobox_fields: { Field: 'Value', Another: 'Value' },
+  categories: ['Category One', 'Category Two'],
+  see_also: ['related-topic.html', 'another-article.html']
+}).then(r => console.log(r.content[0].text));
+"
+\`\`\`
+
+Invent something new. Do not read any files.
 EOF
 
   log_success "Updated ${prompt_file}"
@@ -491,10 +511,11 @@ run_worker() {
     local snapshot_file=$(mktemp)
     find "$WIKI_DIR" -maxdepth 1 -name "*.html" -type f | sort > "$snapshot_file"
 
-    # Run Claude in isolated environment
-    log_info "Running Claude agent..."
+    # Run Claude in isolated environment (Bash-only for MCP tool access)
+    # Agent cannot read files - only the human seed guides creation
+    log_info "Running Claude agent (seed-driven mode)..."
     claude -p --verbose --output-format stream-json \
-      --allowedTools "Edit,Write,Read,Glob,Grep,Bash" \
+      --allowedTools "Bash" \
       --add-dir "$isolation_dir" \
       --include-partial-messages --dangerously-skip-permissions \
       < "$prompt_file" > "$log_file" 2>&1
