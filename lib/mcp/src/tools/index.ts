@@ -44,6 +44,7 @@ import { tool as wikiDiscover } from "./wiki-discover.js";
 import { tool as wikiGitPublish } from "./wiki-git-publish.js";
 import { tool as wikiBuildIndex } from "./wiki-build-index.js";
 import { tool as wikiGenerateFragment } from "./wiki-generate-fragment.js";
+import { tool as wikiCrawl404s } from "./wiki-crawl-404s.js";
 
 // Register all tools here
 // Add your custom tools to this array
@@ -74,6 +75,7 @@ const toolModules: ToolModule[] = [
   wikiGitPublish,
   wikiBuildIndex,
   wikiGenerateFragment,
+  wikiCrawl404s,
 ];
 
 // Build the definitions list for ListToolsRequest

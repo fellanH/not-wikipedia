@@ -8,10 +8,23 @@
 (function() {
   'use strict';
 
-  // Configuration
+  // Configuration - paths are relative to document root
+  const BASE_PATH = getBasePath();
+
+  function getBasePath() {
+    const path = window.location.pathname;
+    // If we're in a subdirectory (pages/, categories/), go up one level
+    if (path.includes('/wiki/') || path.includes('/categories/')) {
+      return '../';
+    }
+    return '';
+  }
+
   const CONFIG = {
-    searchIndexPath: 'api/search-index.json',
-    fragmentsPath: 'fragments/',
+    searchIndexPath: BASE_PATH + 'api/search-index.json',
+    fragmentsPath: BASE_PATH + 'fragments/',
+    randomPath: BASE_PATH + 'api/random.json',
+    pagesPath: BASE_PATH + 'pages/',
     debounceDelay: 200,
     maxResults: 20,
     previewDelay: 300,
@@ -113,7 +126,7 @@
       const typeClass = `type-${article.type || 'article'}`;
       return `
         <li class="search-result-item">
-          <a href="pages/${article.filename}" class="search-result-link">
+          <a href="${CONFIG.pagesPath}${article.filename}" class="search-result-link">
             <span class="search-result-title">${highlightMatch(article.title, query)}</span>
             <span class="type-badge ${typeClass}">${article.type || 'article'}</span>
           </a>
@@ -291,7 +304,7 @@
    */
   async function navigateRandom() {
     try {
-      const response = await fetch('api/random.json');
+      const response = await fetch(CONFIG.randomPath);
       if (!response.ok) throw new Error('Failed to load random data');
 
       const data = await response.json();
@@ -299,7 +312,7 @@
 
       if (articles && articles.length > 0) {
         const random = articles[Math.floor(Math.random() * articles.length)];
-        window.location.href = 'pages/' + random.filename;
+        window.location.href = CONFIG.pagesPath + random.filename;
       }
     } catch (error) {
       console.error('Error navigating to random article:', error);
@@ -308,7 +321,7 @@
         const index = await loadSearchIndex();
         if (index.length > 0) {
           const random = index[Math.floor(Math.random() * index.length)];
-          window.location.href = 'pages/' + random.filename;
+          window.location.href = CONFIG.pagesPath + random.filename;
         }
       } catch {
         alert('Unable to find random article');

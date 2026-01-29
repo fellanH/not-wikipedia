@@ -2,7 +2,7 @@
  * Wiki Git Publish Tool
  *
  * Publishes new or updated articles to the content repository for automatic
- * deployment. Copies the file from dist/pages to the content repo, commits,
+ * deployment. Copies the file from dist/wiki to the content repo, commits,
  * and optionally pushes to remote.
  *
  * Architecture:
@@ -58,10 +58,10 @@ async function validateContentRepo(): Promise<boolean> {
  */
 async function copyArticle(filename: string): Promise<"created" | "updated"> {
   const sourcePath = path.join(WIKI_DIR, filename);
-  const destPath = path.join(CONTENT_REPO_DIR, "pages", filename);
+  const destPath = path.join(CONTENT_REPO_DIR, "wiki", filename);
 
   // Ensure pages directory exists
-  await fs.mkdir(path.join(CONTENT_REPO_DIR, "pages"), { recursive: true });
+  await fs.mkdir(path.join(CONTENT_REPO_DIR, "wiki"), { recursive: true });
 
   // Check if file exists in destination
   let action: "created" | "updated";
@@ -111,12 +111,12 @@ async function syncAllArticles(): Promise<number> {
   const sourceFiles = await fs.readdir(WIKI_DIR);
   const htmlFiles = sourceFiles.filter(f => f.endsWith(".html"));
 
-  await fs.mkdir(path.join(CONTENT_REPO_DIR, "pages"), { recursive: true });
+  await fs.mkdir(path.join(CONTENT_REPO_DIR, "wiki"), { recursive: true });
 
   let count = 0;
   for (const file of htmlFiles) {
     const sourcePath = path.join(WIKI_DIR, file);
-    const destPath = path.join(CONTENT_REPO_DIR, "pages", file);
+    const destPath = path.join(CONTENT_REPO_DIR, "wiki", file);
     await fs.copyFile(sourcePath, destPath);
     count++;
   }

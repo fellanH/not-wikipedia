@@ -115,14 +115,15 @@ function extractInfoboxFields(html: string): Record<string, string> {
 
 /**
  * Generate preview fragment HTML for an article
+ * Note: Links use data-filename for JavaScript handling to work from any path
  */
 function generateFragment(filename: string, title: string, type: string, summary: string, infoboxFields: Record<string, string>): string {
   const fieldsHtml = Object.entries(infoboxFields)
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
     .join("\n        ");
 
-  return `<article class="preview-card" data-type="${type}">
-  <h4><a href="pages/${filename}">${title}</a></h4>
+  return `<article class="preview-card" data-type="${type}" data-filename="${filename}">
+  <h4>${title}</h4>
   <span class="type-badge type-${type}">${type}</span>
   <p>${summary}</p>
   ${fieldsHtml ? `<dl class="preview-meta">\n        ${fieldsHtml}\n      </dl>` : ""}
@@ -136,7 +137,7 @@ function generateCategoryPage(category: string, articles: ArticleEntry[]): strin
   const categoryTitle = category.charAt(0).toUpperCase() + category.slice(1);
   const articleList = articles
     .sort((a, b) => a.title.localeCompare(b.title))
-    .map(a => `<li><a href="../pages/${a.filename}" class="article-link" data-type="${a.type}">${a.title}</a> <span class="type-badge type-${a.type}">${a.type}</span></li>`)
+    .map(a => `<li><a href="../wiki/${a.filename}" class="article-link" data-type="${a.type}">${a.title}</a> <span class="type-badge type-${a.type}">${a.type}</span></li>`)
     .join("\n          ");
 
   return `<!DOCTYPE html>
@@ -172,7 +173,7 @@ function generateCategoryPage(category: string, articles: ArticleEntry[]): strin
 function generateAllArticlesPage(articles: ArticleEntry[]): string {
   const articleList = articles
     .sort((a, b) => a.title.localeCompare(b.title))
-    .map(a => `<li><a href="../pages/${a.filename}" class="article-link" data-type="${a.type}">${a.title}</a> <span class="type-badge type-${a.type}">${a.type}</span> <span class="category-tag">${a.category}</span></li>`)
+    .map(a => `<li><a href="../wiki/${a.filename}" class="article-link" data-type="${a.type}">${a.title}</a> <span class="type-badge type-${a.type}">${a.type}</span> <span class="category-tag">${a.category}</span></li>`)
     .join("\n          ");
 
   return `<!DOCTYPE html>

@@ -88,6 +88,7 @@ function extractInfoboxFields(html: string): Record<string, string> {
 
 /**
  * Generate preview fragment HTML
+ * Note: No links - preview is display only, user clicks original link
  */
 function generateFragment(
   filename: string,
@@ -100,8 +101,8 @@ function generateFragment(
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
     .join("\n        ");
 
-  return `<article class="preview-card" data-type="${type}">
-  <h4><a href="pages/${filename}">${title}</a></h4>
+  return `<article class="preview-card" data-type="${type}" data-filename="${filename}">
+  <h4>${title}</h4>
   <span class="type-badge type-${type}">${type}</span>
   <p>${summary}</p>
   ${fieldsHtml ? `<dl class="preview-meta">\n        ${fieldsHtml}\n      </dl>` : ""}
