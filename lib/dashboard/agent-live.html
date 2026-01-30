@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Live - Ralph Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="agent-live.css">
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <h1>Agent Live View</h1>
+            <span id="agent-badge" class="status-badge inactive">Inactive</span>
+        </div>
+        <nav class="header-nav">
+            <a href="index.html" class="nav-link">Dashboard</a>
+            <a href="agent-live.html" class="nav-link active">Agent Live</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Status Overview -->
+        <section class="status-row">
+            <div class="status-card" id="global-status">
+                <div class="status-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="status-content">
+                    <span class="status-label">Global Loop</span>
+                    <span class="status-value" id="global-loop">--</span>
+                </div>
+            </div>
+            <div class="status-card" id="workers-status">
+                <div class="status-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                        <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" opacity="0.6"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.6"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" opacity="0.3"/>
+                    </svg>
+                </div>
+                <div class="status-content">
+                    <span class="status-label">Active Workers</span>
+                    <span class="status-value" id="active-workers">--</span>
+                </div>
+            </div>
+            <div class="status-card" id="articles-status">
+                <div class="status-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div class="status-content">
+                    <span class="status-label">Recent Articles</span>
+                    <span class="status-value" id="recent-count">--</span>
+                </div>
+            </div>
+            <div class="status-card" id="last-update">
+                <div class="status-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="status-content">
+                    <span class="status-label">Last Update</span>
+                    <span class="status-value" id="last-update-time">--</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Visualization Area -->
+        <section class="visualization-area">
+            <!-- Agent Loop Canvas -->
+            <div class="card canvas-card">
+                <h3>Agent Loop</h3>
+                <div class="canvas-container">
+                    <canvas id="loop-canvas" width="600" height="400"></canvas>
+                </div>
+                <div id="architecture-legend" class="architecture-legend">
+                    <p class="legend-note">The agent loop shows the 5 phases each worker cycles through</p>
+                </div>
+            </div>
+
+            <!-- Worker Cards -->
+            <div class="card workers-card">
+                <h3>Workers</h3>
+                <div id="workers-grid" class="workers-grid">
+                    <p class="empty-state">Waiting for agent data...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Task Queue & Timeline -->
+        <section class="bottom-row">
+            <!-- Task Queue -->
+            <div class="card queue-card">
+                <h3>Task Queue</h3>
+                <div id="task-queue" class="task-queue">
+                    <div class="queue-bar">
+                        <span class="queue-label">Broken Links</span>
+                        <div class="queue-track">
+                            <div class="queue-fill broken" id="queue-broken" style="width: 0%"></div>
+                        </div>
+                        <span class="queue-count" id="count-broken">0</span>
+                    </div>
+                    <div class="queue-bar">
+                        <span class="queue-label">Orphans</span>
+                        <div class="queue-track">
+                            <div class="queue-fill orphan" id="queue-orphan" style="width: 0%"></div>
+                        </div>
+                        <span class="queue-count" id="count-orphan">0</span>
+                    </div>
+                    <div class="queue-bar">
+                        <span class="queue-label">Discovery Queue</span>
+                        <div class="queue-track">
+                            <div class="queue-fill discovery" id="queue-discovery" style="width: 0%"></div>
+                        </div>
+                        <span class="queue-count" id="count-discovery">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Articles -->
+            <div class="card recent-card">
+                <h3>Recent Articles</h3>
+                <div id="recent-articles" class="recent-articles">
+                    <p class="empty-state">No articles created yet</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Ralph Agent Visualization | <span id="connection-status">Connecting...</span></p>
+    </footer>
+
+    <script src="agent-live.js"></script>
+</body>
+</html>

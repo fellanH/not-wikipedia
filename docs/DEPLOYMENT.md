@@ -16,7 +16,7 @@
 
 | Resource | URL |
 |----------|-----|
-| Live Site | `not-wikipedia.vercel.app` |
+| Live Site | `not-wikipedia.org` |
 | GitHub Repo | `github.com/fellanH/wiki-content` |
 | Vercel Dashboard | `vercel.com/felix-hellstroms-projects/not-wikipedia` |
 

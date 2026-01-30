@@ -9,11 +9,80 @@
 </head>
 <body>
     <header>
-        <h1>Ralph Admin Dashboard</h1>
-        <button id="refresh-btn" onclick="refreshDashboard()">Refresh Data</button>
+        <div class="header-left">
+            <h1>Ralph Admin Dashboard</h1>
+        </div>
+        <div class="header-right">
+            <a href="agent-live.html" class="nav-btn">Agent Live</a>
+            <button id="refresh-btn" onclick="refreshDashboard()">Refresh Data</button>
+        </div>
     </header>
 
     <main>
+        <!-- Control Panel Row -->
+        <section class="control-panel">
+            <div class="card control-card">
+                <h3>Agent Controls</h3>
+                <div class="control-status">
+                    <span class="status-indicator" id="agent-indicator"></span>
+                    <span id="agent-running-status">Checking...</span>
+                </div>
+                <div class="control-options">
+                    <div class="control-option">
+                        <label>Workers:</label>
+                        <input type="number" id="opt-workers" value="3" min="1" max="10">
+                    </div>
+                    <div class="control-option">
+                        <label>Loops:</label>
+                        <input type="number" id="opt-loops" value="100" min="1" max="500">
+                    </div>
+                    <div class="control-option">
+                        <label>
+                            <input type="checkbox" id="opt-publish" checked> Auto-publish
+                        </label>
+                    </div>
+                </div>
+                <div class="control-buttons">
+                    <button id="btn-start-agent" class="btn-primary" onclick="startAgentFromUI()">Start Agent</button>
+                    <button id="btn-stop-agent" class="btn-danger" onclick="stopAgentFromUI()" disabled>Stop Agent</button>
+                </div>
+                <div id="agent-logs-mini" class="logs-mini"></div>
+            </div>
+
+            <div class="card control-card">
+                <h3>Tool Testing</h3>
+                <div class="tool-selector">
+                    <select id="tool-select" onchange="updateToolForm()">
+                        <option value="">Select a tool...</option>
+                    </select>
+                    <button onclick="loadToolList()" title="Refresh tool list">Refresh</button>
+                </div>
+                <div id="tool-form" class="tool-form hidden">
+                    <div id="tool-args"></div>
+                    <button onclick="runSelectedTool()" class="btn-primary">Run Tool</button>
+                </div>
+                <div id="tool-result" class="tool-result hidden">
+                    <h4>Result:</h4>
+                    <pre id="tool-output"></pre>
+                </div>
+            </div>
+
+            <div class="card control-card">
+                <h3>Quick Actions</h3>
+                <div class="quick-actions">
+                    <button onclick="runQuickAction('wiki-ecosystem')">Check Health</button>
+                    <button onclick="runQuickAction('wiki-next-task')">Get Next Task</button>
+                    <button onclick="runQuickAction('wiki-build-index')">Rebuild Index</button>
+                    <button onclick="runQuickAction('wiki-discover')">Run Discovery</button>
+                    <button onclick="window.open('https://not-wikipedia.org', '_blank')">View Live Site</button>
+                    <button onclick="openLocalPreview()">Local Preview</button>
+                </div>
+                <div id="quick-result" class="tool-result hidden">
+                    <pre id="quick-output"></pre>
+                </div>
+            </div>
+        </section>
+
         <!-- Metric Cards Row -->
         <section class="metrics-row">
             <div class="card" id="agent-card">

@@ -311,7 +311,7 @@ export const tool: ToolModule = {
           },
         },
       },
-      required: ["source_article"],
+      required: [],
     },
   },
 
@@ -319,6 +319,36 @@ export const tool: ToolModule = {
     const input = args as unknown as DiscoverInput;
 
     try {
+      // If no source_article provided, just return queue stats
+      if (!input.source_article) {
+        const queueStats = getDiscoveryQueueStats();
+        const lines: string[] = [
+          `## Discovery Queue Status`,
+          ``,
+          `**Pending:** ${queueStats.pending}`,
+          `**In Progress:** ${queueStats.inProgress}`,
+          `**Completed:** ${queueStats.completed}`,
+          ``,
+        ];
+
+        if (Object.keys(queueStats.byDepth).length > 0) {
+          lines.push(`### By Depth`);
+          for (const [depth, count] of Object.entries(queueStats.byDepth)) {
+            lines.push(`- Depth ${depth}: ${count} pending`);
+          }
+        }
+
+        lines.push(``);
+        lines.push(`_To scan an article for new concepts, provide a source_article parameter._`);
+
+        return {
+          content: [{
+            type: "text",
+            text: lines.join("\n"),
+          }],
+        };
+      }
+
       const result = await discoverConcepts(input);
 
       // Format output
