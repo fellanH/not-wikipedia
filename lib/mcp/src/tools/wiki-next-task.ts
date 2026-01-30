@@ -21,6 +21,11 @@ import {
   getArticleCount,
   getBrokenLinks,
   getOrphanArticles,
+  getAvailableBrokenLinks,
+  getAvailableOrphanArticles,
+  claimTask,
+  cleanupStaleTasks,
+  getClaimedTaskFilenames,
 } from "../db/database.js";
 
 interface HumanSeed {
@@ -227,14 +232,28 @@ async function getFileBasedState(): Promise<{ placeholders: string[]; usedColors
 
 async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?: number } = {}): Promise<TaskSpec> {
   const randomSeed = crypto.randomBytes(8).toString("hex");
+  const workerId = `worker-${crypto.randomBytes(4).toString("hex")}`;
 
-  // Get data from database
+  // Clean up stale task assignments (workers that crashed)
+  // 30 minute timeout - tasks older than this are considered abandoned
+  const staleCleaned = cleanupStaleTasks(30);
+  if (staleCleaned > 0) {
+    console.error(`[wiki_next_task] Cleaned up ${staleCleaned} stale task assignment(s)`);
+  }
+
+  // Get data from database (using available* functions that exclude claimed tasks)
   const articleCount = getArticleCount();
-  const brokenLinksData = getBrokenLinks();
-  const orphansData = getOrphanArticles();
+  const allBrokenLinks = getBrokenLinks(); // For stats
+  const availableBrokenLinks = getAvailableBrokenLinks(); // Excludes claimed
+  const allOrphans = getOrphanArticles(); // For stats
+  const availableOrphans = getAvailableOrphanArticles(); // Excludes claimed
 
   // Get file-based state (placeholders and colors)
   const fileState = await getFileBasedState();
+
+  // Filter placeholders to exclude claimed tasks
+  const claimedFilenames = new Set(getClaimedTaskFilenames());
+  const availablePlaceholders = fileState.placeholders.filter(f => !claimedFilenames.has(f));
 
   // Pick unused color for visual variety
   const availableColors = INFOBOX_COLORS.filter(c => !fileState.usedColors.includes(c.toLowerCase()));
@@ -243,95 +262,154 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
   // Check for live 404s if requested
   let live404s: Live404Result[] = [];
   if (options.useLiveCrawl) {
-    live404s = await findLive404s(options.maxCrawlPages || 20);
+    const allLive404s = await findLive404s(options.maxCrawlPages || 20);
+    // Filter out already claimed live 404s
+    live404s = allLive404s.filter(l => !claimedFilenames.has(l.filename));
   }
 
   const ecosystemStats = {
     totalArticles: articleCount,
-    brokenLinks: brokenLinksData.length,
-    orphans: orphansData.length,
-    placeholders: fileState.placeholders.length,
+    brokenLinks: allBrokenLinks.length, // Total for reporting
+    orphans: allOrphans.length, // Total for reporting
+    placeholders: fileState.placeholders.length, // Total for reporting
     live404s: live404s.length,
   };
 
+  // Helper function to attempt claiming a task with retry on different items
+  function tryClaimFromList<T>(
+    items: T[],
+    getFilename: (item: T) => string,
+    taskType: string,
+    maxAttempts: number = 5
+  ): T | null {
+    // Shuffle to reduce contention when multiple workers start simultaneously
+    const shuffled = [...items].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < Math.min(maxAttempts, shuffled.length); i++) {
+      const item = shuffled[i];
+      const filename = getFilename(item);
+      if (claimTask(taskType, filename, workerId)) {
+        console.error(`[wiki_next_task] Claimed task: ${taskType} -> ${filename} (worker: ${workerId})`);
+        return item;
+      }
+      // Task was already claimed by another worker, try next
+    }
+    return null;
+  }
+
   // Priority 0: Live 404s from deployed site (CRITICAL - takes precedence)
-  // These are pages that exist in links but return 404 on the live site
   if (options.useLiveCrawl && live404s.length > 0) {
-    const selected = secureRandomElement(live404s) || live404s[0];
-    return {
-      taskType: "create_from_live_404",
-      priority: "critical",
-      topic: {
-        name: selected.suggestedTitle,
-        filename: selected.filename,
-        context: `This page returns 404 on the live site (${selected.target}). Referenced by ${selected.sources.length} page(s): ${selected.sources.map(s => s.split("/").pop()).join(", ")}. Create this missing page to fix the broken links.`,
-      },
-      infoboxColor,
-      randomSeed,
-      ecosystemStats,
-    };
+    const claimed = tryClaimFromList(
+      live404s,
+      (item) => item.filename,
+      "create_from_live_404"
+    );
+
+    if (claimed) {
+      return {
+        taskType: "create_from_live_404",
+        priority: "critical",
+        topic: {
+          name: claimed.suggestedTitle,
+          filename: claimed.filename,
+          context: `This page returns 404 on the live site (${claimed.target}). Referenced by ${claimed.sources.length} page(s): ${claimed.sources.map(s => s.split("/").pop()).join(", ")}. Create this missing page to fix the broken links.`,
+        },
+        infoboxColor,
+        randomSeed,
+        ecosystemStats,
+      };
+    }
+    // All live 404s are claimed, fall through to next priority
   }
 
   // Priority 1: Broken links (CRITICAL)
-  // Agent should infer article type/category from the link context and referencing articles
-  if (brokenLinksData.length > 0) {
-    // Sort by number of sources (most referenced first)
-    brokenLinksData.sort((a, b) => b.sources.length - a.sources.length);
-    const selected = secureRandomElement(brokenLinksData) || brokenLinksData[0];
-    const topicName = selected.target.replace(".html", "").split("-")
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  if (availableBrokenLinks.length > 0) {
+    // Sort by number of sources (most referenced first) before attempting claims
+    availableBrokenLinks.sort((a, b) => b.sources.length - a.sources.length);
 
-    return {
-      taskType: "repair_broken_link",
-      priority: "critical",
-      topic: {
-        name: topicName,
-        filename: selected.target,
-        context: `Referenced by ${selected.sources.length} article(s): ${selected.sources.join(", ")}. Read the referencing articles to understand the conceptual role this page should fill—but use entirely fresh vocabulary and framing. Do not echo their terminology.`,
-      },
-      infoboxColor,
-      randomSeed,
-      ecosystemStats,
-    };
+    const claimed = tryClaimFromList(
+      availableBrokenLinks,
+      (item) => item.target,
+      "repair_broken_link"
+    );
+
+    if (claimed) {
+      const topicName = claimed.target.replace(".html", "").split("-")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+
+      return {
+        taskType: "repair_broken_link",
+        priority: "critical",
+        topic: {
+          name: topicName,
+          filename: claimed.target,
+          context: `Referenced by ${claimed.sources.length} article(s): ${claimed.sources.join(", ")}. Create this missing article to fix the broken links.`,
+        },
+        infoboxColor,
+        randomSeed,
+        ecosystemStats,
+      };
+    }
+    // All broken links are claimed, fall through
   }
 
   // Priority 2: Placeholders (HIGH)
-  if (fileState.placeholders.length > 0) {
-    const sourceFile = secureRandomElement(fileState.placeholders) || fileState.placeholders[0];
-    return {
-      taskType: "resolve_placeholder",
-      priority: "high",
-      topic: {
-        name: "PLACEHOLDER_RESOLUTION",
-        filename: sourceFile,
-        context: `File ${sourceFile} contains unresolved NEXT_PAGE_PLACEHOLDER. Read the file to understand context and replace with an appropriate link.`,
-      },
-      infoboxColor,
-      randomSeed,
-      ecosystemStats,
-    };
+  if (availablePlaceholders.length > 0) {
+    const claimed = tryClaimFromList(
+      availablePlaceholders,
+      (item) => item,
+      "resolve_placeholder"
+    );
+
+    if (claimed) {
+      return {
+        taskType: "resolve_placeholder",
+        priority: "high",
+        topic: {
+          name: "PLACEHOLDER_RESOLUTION",
+          filename: claimed,
+          context: `File ${claimed} contains unresolved NEXT_PAGE_PLACEHOLDER. Read the file to understand context and replace with an appropriate link.`,
+        },
+        infoboxColor,
+        randomSeed,
+        ecosystemStats,
+      };
+    }
+    // All placeholders are claimed, fall through
   }
 
   // Priority 3: Orphans (MEDIUM)
-  if (orphansData.length > 0) {
-    const orphan = secureRandomElement(orphansData) || orphansData[0];
-    return {
-      taskType: "fix_orphan",
-      priority: "medium",
-      topic: {
-        name: orphan.replace(".html", ""),
-        filename: orphan,
-        context: `This article has no incoming links. Read the orphan article and find 2-3 related articles to add natural links from.`,
-      },
-      infoboxColor,
-      randomSeed,
-      ecosystemStats,
-    };
+  if (availableOrphans.length > 0) {
+    const claimed = tryClaimFromList(
+      availableOrphans,
+      (item) => item,
+      "fix_orphan"
+    );
+
+    if (claimed) {
+      return {
+        taskType: "fix_orphan",
+        priority: "medium",
+        topic: {
+          name: claimed.replace(".html", ""),
+          filename: claimed,
+          context: `This article has no incoming links. Read the orphan article and find 2-3 related articles to add natural links from.`,
+        },
+        infoboxColor,
+        randomSeed,
+        ecosystemStats,
+      };
+    }
+    // All orphans are claimed, fall through
   }
 
-  // Priority 4: Create new content (LOW - ecosystem is healthy)
-  // Agent should derive all content decisions from the human seed
+  // Priority 4: Create new content (LOW - ecosystem is healthy or all tasks claimed)
+  // For new content, we use a generated filename as the claim target
   const humanSeed = await fetchHumanSeed();
+  const newContentFilename = `new-content-${randomSeed}.html`;
+
+  // Claim with a unique filename to prevent duplicate new content generation
+  claimTask("create_new", newContentFilename, workerId);
 
   return {
     taskType: "create_new",
@@ -339,7 +417,7 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
     topic: {
       name: "INSPIRED_BY_SEED",
       filename: "to-be-determined.html",
-      context: "Ecosystem is healthy. Use the humanSeed as pure inspiration—derive a genuinely novel topic unrelated to existing articles. Avoid terminology patterns from the current corpus (semantic-*, temporal-*, *-consciousness). Invent fresh concepts with unique naming.",
+      context: "Ecosystem is healthy (or all repair tasks are claimed by other workers). Use the humanSeed as pure inspiration—derive a genuinely novel topic unrelated to existing articles. Avoid terminology patterns from the current corpus (semantic-*, temporal-*, *-consciousness). Invent fresh concepts with unique naming.",
     },
     humanSeed,
     infoboxColor,

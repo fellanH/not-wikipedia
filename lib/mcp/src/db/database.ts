@@ -93,6 +93,19 @@ function initializeSchema(): void {
       priority INTEGER DEFAULT 0
     );
 
+    -- Task assignments for preventing race conditions between parallel workers
+    -- Workers claim tasks atomically; stale claims are cleaned up after timeout
+    CREATE TABLE IF NOT EXISTS task_assignments (
+      id INTEGER PRIMARY KEY,
+      task_type TEXT NOT NULL,
+      target_filename TEXT NOT NULL,
+      worker_id TEXT NOT NULL,
+      claimed_at TEXT NOT NULL,
+      completed_at TEXT,
+      status TEXT DEFAULT 'in_progress',
+      UNIQUE(task_type, target_filename, status)
+    );
+
     -- Indexes for common queries
     CREATE INDEX IF NOT EXISTS idx_articles_category ON articles(category);
     CREATE INDEX IF NOT EXISTS idx_articles_type ON articles(type);
@@ -102,6 +115,8 @@ function initializeSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_discovery_queue_status ON discovery_queue(status);
     CREATE INDEX IF NOT EXISTS idx_discovery_queue_depth ON discovery_queue(depth);
     CREATE INDEX IF NOT EXISTS idx_discovery_queue_priority ON discovery_queue(priority DESC);
+    CREATE INDEX IF NOT EXISTS idx_task_assignments_status ON task_assignments(status);
+    CREATE INDEX IF NOT EXISTS idx_task_assignments_target ON task_assignments(target_filename);
   `);
 }
 
@@ -520,6 +535,153 @@ export function pruneCompletedDiscoveryItems(daysOld: number = 7): number {
     DELETE FROM discovery_queue
     WHERE status = 'completed'
     AND datetime(discovered_at) < datetime('now', '-' || ? || ' days')
+  `).run(daysOld);
+  return result.changes;
+}
+
+// =============================================================================
+// TASK ASSIGNMENT FUNCTIONS (Parallel Worker Coordination)
+// =============================================================================
+
+export interface TaskAssignment {
+  id: number;
+  task_type: string;
+  target_filename: string;
+  worker_id: string;
+  claimed_at: string;
+  completed_at: string | null;
+  status: string;
+}
+
+/**
+ * Claim a task atomically. Returns true if claimed successfully, false if already claimed.
+ * Uses INSERT with UNIQUE constraint to ensure atomic claiming.
+ */
+export function claimTask(
+  taskType: string,
+  targetFilename: string,
+  workerId: string
+): boolean {
+  const db = getDatabase();
+  try {
+    db.prepare(`
+      INSERT INTO task_assignments (task_type, target_filename, worker_id, claimed_at, status)
+      VALUES (?, ?, ?, datetime('now'), 'in_progress')
+    `).run(taskType, targetFilename, workerId);
+    return true;
+  } catch {
+    // UNIQUE constraint violation - task already claimed
+    return false;
+  }
+}
+
+/**
+ * Mark a task as completed.
+ */
+export function completeTask(taskType: string, targetFilename: string): void {
+  const db = getDatabase();
+  db.prepare(`
+    UPDATE task_assignments
+    SET status = 'completed', completed_at = datetime('now')
+    WHERE task_type = ? AND target_filename = ? AND status = 'in_progress'
+  `).run(taskType, targetFilename);
+}
+
+/**
+ * Release a task (e.g., if worker failed to complete it).
+ */
+export function releaseTask(taskType: string, targetFilename: string): void {
+  const db = getDatabase();
+  db.prepare(`
+    DELETE FROM task_assignments
+    WHERE task_type = ? AND target_filename = ? AND status = 'in_progress'
+  `).run(taskType, targetFilename);
+}
+
+/**
+ * Get all currently claimed (in-progress) task filenames.
+ */
+export function getClaimedTaskFilenames(): string[] {
+  const db = getDatabase();
+  const rows = db.prepare(`
+    SELECT target_filename FROM task_assignments WHERE status = 'in_progress'
+  `).all() as { target_filename: string }[];
+  return rows.map(r => r.target_filename);
+}
+
+/**
+ * Check if a specific task is currently claimed.
+ */
+export function isTaskClaimed(taskType: string, targetFilename: string): boolean {
+  const db = getDatabase();
+  const row = db.prepare(`
+    SELECT 1 FROM task_assignments
+    WHERE task_type = ? AND target_filename = ? AND status = 'in_progress'
+  `).get(taskType, targetFilename);
+  return !!row;
+}
+
+/**
+ * Clean up stale task assignments (workers that crashed without completing).
+ * Default timeout is 30 minutes.
+ */
+export function cleanupStaleTasks(timeoutMinutes: number = 30): number {
+  const db = getDatabase();
+  const result = db.prepare(`
+    DELETE FROM task_assignments
+    WHERE status = 'in_progress'
+    AND datetime(claimed_at) < datetime('now', '-' || ? || ' minutes')
+  `).run(timeoutMinutes);
+  return result.changes;
+}
+
+/**
+ * Get broken links excluding currently claimed tasks.
+ * This is the key function for preventing race conditions.
+ */
+export function getAvailableBrokenLinks(): { target: string; sources: string[] }[] {
+  const db = getDatabase();
+  const rows = db.prepare(`
+    SELECT l.target_filename as target, GROUP_CONCAT(a.filename) as sources
+    FROM links l
+    JOIN articles a ON l.source_id = a.id
+    WHERE l.target_filename NOT IN (SELECT filename FROM articles)
+      AND l.target_filename NOT IN (
+        SELECT target_filename FROM task_assignments WHERE status = 'in_progress'
+      )
+    GROUP BY l.target_filename
+  `).all() as { target: string; sources: string }[];
+
+  return rows.map(row => ({
+    target: row.target,
+    sources: row.sources.split(","),
+  }));
+}
+
+/**
+ * Get orphan articles excluding currently claimed tasks.
+ */
+export function getAvailableOrphanArticles(): string[] {
+  const db = getDatabase();
+  const rows = db.prepare(`
+    SELECT filename FROM articles
+    WHERE inlinks = 0 AND filename != 'index.html'
+      AND filename NOT IN (
+        SELECT target_filename FROM task_assignments WHERE status = 'in_progress'
+      )
+  `).all() as { filename: string }[];
+  return rows.map(row => row.filename);
+}
+
+/**
+ * Prune old completed task assignments to keep the table clean.
+ */
+export function pruneCompletedTaskAssignments(daysOld: number = 7): number {
+  const db = getDatabase();
+  const result = db.prepare(`
+    DELETE FROM task_assignments
+    WHERE status = 'completed'
+    AND datetime(completed_at) < datetime('now', '-' || ? || ' days')
   `).run(daysOld);
   return result.changes;
 }

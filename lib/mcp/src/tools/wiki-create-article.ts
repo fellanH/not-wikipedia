@@ -8,7 +8,7 @@ import { ToolModule } from "../types.js";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { WIKI_DIR, INFOBOX_COLORS } from "../config.js";
-import { insertArticle } from "../db/database.js";
+import { insertArticle, completeTask } from "../db/database.js";
 
 interface ArticleInput {
   title: string;
@@ -194,6 +194,18 @@ export const tool: ToolModule = {
       } catch (dbErr) {
         // Article may already exist in DB - not fatal
         console.error("DB registration warning:", dbErr);
+      }
+
+      // Complete any task assignments for this filename
+      // This prevents race conditions where multiple workers try to create the same article
+      try {
+        completeTask("repair_broken_link", filename);
+        completeTask("create_from_live_404", filename);
+        completeTask("fix_orphan", filename);
+        completeTask("resolve_placeholder", filename);
+      } catch (taskErr) {
+        // Not fatal - task may not have been assigned
+        console.error("Task completion warning:", taskErr);
       }
 
       return { content: [{ type: "text", text: JSON.stringify({ success: true, filename, title, message: `Created ${filename}` }, null, 2) }] };
