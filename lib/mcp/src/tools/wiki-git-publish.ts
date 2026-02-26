@@ -29,6 +29,7 @@ interface PublishResult {
   commit_hash?: string;
   pushed: boolean;
   files_changed?: number;
+  push_attempts?: number;
   error?: string;
 }
 
@@ -49,6 +50,34 @@ async function validateContentRepo(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Push with retry and exponential backoff.
+ * Returns { success, attempts } where attempts is the number of tries made.
+ */
+async function pushWithRetry(maxAttempts = 3): Promise<{ success: boolean; attempts: number; error?: string }> {
+  let lastError: string | undefined;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await gitCommand("push origin main");
+      return { success: true, attempts: attempt };
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+
+      if (attempt === maxAttempts) {
+        console.error(`Push failed after ${maxAttempts} attempts: ${lastError}`);
+        return { success: false, attempts: attempt, error: lastError };
+      }
+
+      const delay = Math.pow(2, attempt) * 1000;  // 2s, 4s, 8s
+      console.log(`Push attempt ${attempt} failed, retrying in ${delay / 1000}s...`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+
+  return { success: false, attempts: maxAttempts, error: lastError };
 }
 
 /**
@@ -93,21 +122,24 @@ async function publishChanges(input: PublishInput): Promise<PublishResult> {
     const { stdout: hashOut } = await gitCommand("rev-parse --short HEAD");
     const commitHash = hashOut.trim();
 
-    // Push if requested
+    // Push if requested (with retry logic)
     let pushed = false;
+    let pushAttempts: number | undefined;
     if (push) {
-      try {
-        await gitCommand("push origin main");
-        pushed = true;
-      } catch (pushError) {
-        // Push failed, but commit succeeded
+      const pushResult = await pushWithRetry(3);
+      pushed = pushResult.success;
+      pushAttempts = pushResult.attempts;
+
+      if (!pushResult.success) {
+        // Push failed after all retries, but commit succeeded
         return {
           success: true,
           action: "committed",
           commit_hash: commitHash,
           files_changed: filesChanged,
           pushed: false,
-          error: `Committed but push failed: ${pushError instanceof Error ? pushError.message : String(pushError)}`,
+          push_attempts: pushAttempts,
+          error: `Committed but push failed after ${pushAttempts} attempts: ${pushResult.error}`,
         };
       }
     }
@@ -118,6 +150,7 @@ async function publishChanges(input: PublishInput): Promise<PublishResult> {
       commit_hash: commitHash,
       files_changed: filesChanged,
       pushed,
+      push_attempts: pushAttempts,
     };
   } catch (error) {
     return {
@@ -165,7 +198,15 @@ export const tool: ToolModule = {
         lines.push("");
         lines.push(`- **Files Changed:** ${result.files_changed}`);
         lines.push(`- **Commit:** ${result.commit_hash}`);
-        lines.push(`- **Pushed:** ${result.pushed ? "Yes (Vercel deploy triggered)" : "No"}`);
+        let pushStatus: string;
+        if (result.pushed) {
+          pushStatus = `Yes (Vercel deploy triggered)${result.push_attempts && result.push_attempts > 1 ? ` after ${result.push_attempts} attempts` : ""}`;
+        } else if (result.push_attempts && result.push_attempts > 0) {
+          pushStatus = `No (failed after ${result.push_attempts} attempts)`;
+        } else {
+          pushStatus = "No";
+        }
+        lines.push(`- **Pushed:** ${pushStatus}`);
       } else {
         lines.push(`## Publish Result: No Changes`);
         lines.push("");

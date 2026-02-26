@@ -27,6 +27,9 @@ WORKER_COMPLETED=()  # Track workers that finished max loops (not crashed)
 GLOBAL_LOOP_COUNT="/tmp/ralph-loop-count"
 WORKER_DONE_DIR="/tmp/ralph-worker-done"
 
+# Dashboard status file (for real-time visualization)
+STATUS_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../meta/agent-status.json"
+
 # Colors for output (with worker prefix support)
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -106,6 +109,9 @@ cleanup() {
   echo "" >&2
   echo -e "${YELLOW}Shutting down coordinator and all workers...${NC}" >&2
 
+  # Mark agent as inactive for dashboard
+  write_agent_inactive
+
   # Kill all worker processes
   for pid in "${WORKER_PIDS[@]}"; do
     if ps -p "$pid" > /dev/null 2>&1; then
@@ -145,6 +151,85 @@ increment_global_loop() {
 
 get_global_loop() {
   cat "$GLOBAL_LOOP_COUNT" 2>/dev/null || echo 0
+}
+
+# =============================================================================
+# AGENT STATUS FILE (for dashboard real-time visualization)
+# =============================================================================
+write_agent_status() {
+  local worker_id="${1:-0}"
+  local phase="${2:-idle}"
+  local task_type="${3:-}"
+  local task_filename="${4:-}"
+
+  # Build worker status update using node for reliable JSON handling
+  node -e "
+const fs = require('fs');
+const statusFile = '${STATUS_FILE}';
+
+// Read existing status or create new
+let data = { workers: [], recentArticles: [], taskQueue: {} };
+try {
+  data = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
+} catch {}
+
+// Update timestamp and active flag
+data.timestamp = new Date().toISOString();
+data.active = true;
+data.globalLoop = $(get_global_loop);
+
+// Update specific worker
+const workerId = ${worker_id};
+const workerData = {
+  id: workerId,
+  phase: '${phase}',
+  task: ${task_type:+"{ type: '${task_type}', filename: '${task_filename}' }"}${task_type:-null},
+  updatedAt: new Date().toISOString()
+};
+
+// Find and update or add worker
+const idx = data.workers.findIndex(w => w.id === workerId);
+if (idx >= 0) {
+  data.workers[idx] = { ...data.workers[idx], ...workerData };
+} else if (workerId > 0) {
+  data.workers.push(workerData);
+}
+
+// Sort workers by ID
+data.workers.sort((a, b) => a.id - b.id);
+
+// Write atomically
+const tmpFile = statusFile + '.tmp';
+fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2));
+fs.renameSync(tmpFile, statusFile);
+" 2>/dev/null || true
+}
+
+write_agent_inactive() {
+  node -e "
+const fs = require('fs');
+const statusFile = '${STATUS_FILE}';
+let data = { workers: [], recentArticles: [], taskQueue: {} };
+try { data = JSON.parse(fs.readFileSync(statusFile, 'utf8')); } catch {}
+data.timestamp = new Date().toISOString();
+data.active = false;
+data.globalLoop = $(get_global_loop);
+fs.writeFileSync(statusFile, JSON.stringify(data, null, 2));
+" 2>/dev/null || true
+}
+
+add_recent_article() {
+  local filename="$1"
+  node -e "
+const fs = require('fs');
+const statusFile = '${STATUS_FILE}';
+let data = { workers: [], recentArticles: [], taskQueue: {} };
+try { data = JSON.parse(fs.readFileSync(statusFile, 'utf8')); } catch {}
+data.recentArticles = data.recentArticles || [];
+data.recentArticles.unshift({ filename: '${filename}', createdAt: new Date().toISOString() });
+data.recentArticles = data.recentArticles.slice(0, 20); // Keep last 20
+fs.writeFileSync(statusFile, JSON.stringify(data, null, 2));
+" 2>/dev/null || true
 }
 
 # =============================================================================
@@ -482,6 +567,9 @@ run_worker() {
     log "Worker $worker_id | Loop $worker_loop (Global: $global_loop)"
     log "=========================================="
 
+    # Update status: fetching task
+    write_agent_status "$worker_id" "fetching_task"
+
     # Fetch task
     local task_json
     task_json=$(fetch_task)
@@ -510,6 +598,13 @@ run_worker() {
     # (MCP tools write directly here, bypassing isolation)
     local snapshot_file=$(mktemp)
     find "$WIKI_DIR" -maxdepth 1 -name "*.html" -type f | sort > "$snapshot_file"
+
+    # Extract task info for status
+    local task_type=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.taskType || 'create_new')" 2>/dev/null)
+    local task_filename=$(echo "$task_json" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.topic?.filename || '')" 2>/dev/null)
+
+    # Update status: running Claude
+    write_agent_status "$worker_id" "running_claude" "$task_type" "$task_filename"
 
     # Run Claude in isolated environment (Bash-only for MCP tool access)
     # Agent cannot read files - only the human seed guides creation
@@ -563,12 +658,22 @@ run_worker() {
 
     # Run discovery and publish for new article
     if [[ -n "$new_article" ]]; then
+      # Track article creation for dashboard
+      add_recent_article "$new_article"
+
+      # Update status: running discovery
+      write_agent_status "$worker_id" "discovery" "" "$new_article"
       run_discovery "$new_article"
-      # Publish to content repo for auto-deployment
+
+      # Update status: publishing
+      write_agent_status "$worker_id" "publishing" "" "$new_article"
       publish_article "$new_article"
     else
       log_warn "No new article detected"
     fi
+
+    # Update status: idle (ready for next loop)
+    write_agent_status "$worker_id" "idle"
 
     # Check loop limit
     if [[ $MAX_LOOPS_PER_WORKER -gt 0 && $worker_loop -ge $MAX_LOOPS_PER_WORKER ]]; then
@@ -595,6 +700,9 @@ acquire_coordinator_lock
 mkdir -p "$LOG_DIR"
 echo "0" > "$GLOBAL_LOOP_COUNT"
 rotate_logs
+
+# Initialize agent status file for dashboard
+write_agent_status 0 "starting"
 
 echo "" >&2
 echo -e "${MAGENTA}══════════════════════════════════════════════════════════${NC}" >&2

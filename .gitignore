@@ -4,3 +4,9 @@
 meta/ralph.db
 meta/ralph.db-wal
 meta/ralph.db-shm
+lib/agent/logs/
+lib/meta/ralph.db
+lib/meta/ralph.db-shm
+lib/meta/ralph.db-wal
+lib/meta/agent-status.json
+lib/mcp/coverage/

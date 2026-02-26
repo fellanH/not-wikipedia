@@ -192,20 +192,21 @@ export const tool: ToolModule = {
           created: new Date().toISOString()
         });
       } catch (dbErr) {
-        // Article may already exist in DB - not fatal
-        console.error("DB registration warning:", dbErr);
+        // Rollback: delete the file we just created
+        await fs.unlink(filepath);
+        throw new Error(`Article creation failed during DB registration: ${dbErr instanceof Error ? dbErr.message : dbErr}`);
       }
 
       // Complete any task assignments for this filename
       // This prevents race conditions where multiple workers try to create the same article
+      // Note: Task completion errors are non-fatal - the article was successfully created
       try {
         completeTask("repair_broken_link", filename);
         completeTask("create_from_live_404", filename);
         completeTask("fix_orphan", filename);
         completeTask("resolve_placeholder", filename);
-      } catch (taskErr) {
-        // Not fatal - task may not have been assigned
-        console.error("Task completion warning:", taskErr);
+      } catch {
+        // Non-fatal: task may not have been assigned
       }
 
       return { content: [{ type: "text", text: JSON.stringify({ success: true, filename, title, message: `Created ${filename}` }, null, 2) }] };
