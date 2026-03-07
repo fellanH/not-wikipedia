@@ -131,6 +131,7 @@ fi
 ```
 
 **Usage**:
+
 ```bash
 npm start           # Full agent loop
 npm run start:dry   # Test without publishing
@@ -178,6 +179,7 @@ done
 ```
 
 **Modify publish section**:
+
 ```bash
 if [ "$AUTO_PUBLISH" = "true" ] && [ "$DRY_RUN" = "false" ]; then
     log_worker $worker_id "Publishing to GitHub..."
@@ -222,6 +224,7 @@ run_health_check() {
 ```
 
 **Usage**:
+
 ```bash
 ./ralph.sh --health-check
 # or
@@ -236,7 +239,7 @@ npm run health
 
 **Solution**: Add section to README.md:
 
-```markdown
+````markdown
 ## Publishing Setup
 
 For auto-publishing to work, configure GitHub access:
@@ -254,6 +257,7 @@ For auto-publishing to work, configure GitHub access:
    ```bash
    export GITHUB_TOKEN=ghp_xxxxxxxxxxxx
    ```
+````
 
 ### Vercel Deployment
 
@@ -265,7 +269,8 @@ The wiki-content repository auto-deploys via Vercel:
    - Build Command: (leave empty)
    - Output Directory: `.`
 3. Deploy triggers automatically on push
-```
+
+````
 
 ---
 
@@ -315,9 +320,10 @@ import(toolPath)
         console.error('Error:', e.message);
         process.exit(1);
     });
-```
+````
 
 **Add to `lib/mcp/package.json`**:
+
 ```json
 "bin": {
     "mcp": "./cli.js"
@@ -328,6 +334,7 @@ import(toolPath)
 ```
 
 **Usage**:
+
 ```bash
 cd lib/mcp
 npm run tool wiki-ecosystem
@@ -339,15 +346,15 @@ npm run tool wiki-broken-links -- --limit 5
 
 ## Implementation Priority
 
-| Priority | Change | Effort | Impact |
-|----------|--------|--------|--------|
-| 1 | `.env.example` | Low | High - immediate clarity |
-| 2 | NPM scripts in root | Low | High - standard interface |
-| 3 | `--dry-run` flag | Medium | High - safer testing |
-| 4 | Setup script | Medium | High - onboarding |
-| 5 | Credential docs | Low | Medium - unblocks publishing |
-| 6 | `--health-check` flag | Low | Medium - visibility |
-| 7 | MCP CLI wrapper | Medium | Low - power users only |
+| Priority | Change                | Effort | Impact                       |
+| -------- | --------------------- | ------ | ---------------------------- |
+| 1        | `.env.example`        | Low    | High - immediate clarity     |
+| 2        | NPM scripts in root   | Low    | High - standard interface    |
+| 3        | `--dry-run` flag      | Medium | High - safer testing         |
+| 4        | Setup script          | Medium | High - onboarding            |
+| 5        | Credential docs       | Low    | Medium - unblocks publishing |
+| 6        | `--health-check` flag | Low    | Medium - visibility          |
+| 7        | MCP CLI wrapper       | Medium | Low - power users only       |
 
 ## Summary
 

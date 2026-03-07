@@ -13,10 +13,7 @@ import { ToolModule } from "../types.js";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { WIKI_DIR, API_DIR, CATEGORIES_DIR, FRAGMENTS_DIR } from "../config.js";
-import {
-  getAllArticles,
-  getCategoryDistribution,
-} from "../db/database.js";
+import { getAllArticles, getCategoryDistribution } from "../db/database.js";
 
 interface SearchIndexEntry {
   filename: string;
@@ -38,7 +35,9 @@ interface ArticleEntry extends SearchIndexEntry {
  */
 function extractSummary(html: string): string {
   // Find first <p> with actual content
-  const match = html.match(/<p>(?!<b>This article)<b>([^<]+)<\/b>([^<]*(?:<[^>]+>[^<]*)*?)<\/p>/);
+  const match = html.match(
+    /<p>(?!<b>This article)<b>([^<]+)<\/b>([^<]*(?:<[^>]+>[^<]*)*?)<\/p>/,
+  );
   if (match) {
     // Get the bold term and following text
     const text = (match[1] + match[2])
@@ -51,7 +50,10 @@ function extractSummary(html: string): string {
   // Fallback: any paragraph
   const fallback = html.match(/<p>([^<]+(?:<[^>]+>[^<]*)*?)<\/p>/);
   if (fallback) {
-    const text = fallback[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const text = fallback[1]
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     return text.length > 200 ? text.slice(0, 197) + "..." : text;
   }
 
@@ -65,9 +67,12 @@ function extractKeywords(html: string, title: string): string[] {
   const keywords = new Set<string>();
 
   // Add title words
-  title.toLowerCase().split(/\s+/).forEach(w => {
-    if (w.length > 3) keywords.add(w);
-  });
+  title
+    .toLowerCase()
+    .split(/\s+/)
+    .forEach((w) => {
+      if (w.length > 3) keywords.add(w);
+    });
 
   // Extract bold terms
   const boldMatches = html.matchAll(/<b>([^<]+)<\/b>/g);
@@ -91,7 +96,9 @@ function extractKeywords(html: string, title: string): string[] {
  */
 function extractInfoboxFields(html: string): Record<string, string> {
   const fields: Record<string, string> = {};
-  const rows = html.matchAll(/<tr>\s*<th[^>]*>([^<]+)<\/th>\s*<td>([^<]*(?:<[^>]+>[^<]*)*?)<\/td>\s*<\/tr>/g);
+  const rows = html.matchAll(
+    /<tr>\s*<th[^>]*>([^<]+)<\/th>\s*<td>([^<]*(?:<[^>]+>[^<]*)*?)<\/td>\s*<\/tr>/g,
+  );
 
   let count = 0;
   for (const match of rows) {
@@ -111,7 +118,13 @@ function extractInfoboxFields(html: string): Record<string, string> {
  * Generate preview fragment HTML for an article
  * Note: Links use data-filename for JavaScript handling to work from any path
  */
-function generateFragment(filename: string, title: string, type: string, summary: string, infoboxFields: Record<string, string>): string {
+function generateFragment(
+  filename: string,
+  title: string,
+  type: string,
+  summary: string,
+  infoboxFields: Record<string, string>,
+): string {
   const fieldsHtml = Object.entries(infoboxFields)
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
     .join("\n        ");
@@ -127,11 +140,17 @@ function generateFragment(filename: string, title: string, type: string, summary
 /**
  * Generate category page HTML
  */
-function generateCategoryPage(category: string, articles: ArticleEntry[]): string {
+function generateCategoryPage(
+  category: string,
+  articles: ArticleEntry[],
+): string {
   const categoryTitle = category.charAt(0).toUpperCase() + category.slice(1);
   const articleList = articles
     .sort((a, b) => a.title.localeCompare(b.title))
-    .map(a => `<li><a href="../wiki/${a.filename}" class="article-link" data-type="${a.type}">${a.title}</a> <span class="type-badge type-${a.type}">${a.type}</span></li>`)
+    .map(
+      (a) =>
+        `<li><a href="../wiki/${a.filename}" class="article-link" data-type="${a.type}">${a.title}</a> <span class="type-badge type-${a.type}">${a.type}</span></li>`,
+    )
     .join("\n          ");
 
   return `<!DOCTYPE html>
@@ -167,7 +186,10 @@ function generateCategoryPage(category: string, articles: ArticleEntry[]): strin
 function generateAllArticlesPage(articles: ArticleEntry[]): string {
   const articleList = articles
     .sort((a, b) => a.title.localeCompare(b.title))
-    .map(a => `<li><a href="../wiki/${a.filename}" class="article-link" data-type="${a.type}">${a.title}</a> <span class="type-badge type-${a.type}">${a.type}</span> <span class="category-tag">${a.category}</span></li>`)
+    .map(
+      (a) =>
+        `<li><a href="../wiki/${a.filename}" class="article-link" data-type="${a.type}">${a.title}</a> <span class="type-badge type-${a.type}">${a.type}</span> <span class="category-tag">${a.category}</span></li>`,
+    )
     .join("\n          ");
 
   return `<!DOCTYPE html>
@@ -200,26 +222,29 @@ function generateAllArticlesPage(articles: ArticleEntry[]): string {
 export const tool: ToolModule = {
   definition: {
     name: "wiki_build_index",
-    description: "Generate static index files for HTMX search and navigation. Creates api/search-index.json, api/articles.json, category pages, and article fragments.",
+    description:
+      "Generate static index files for HTMX search and navigation. Creates api/search-index.json, api/articles.json, category pages, and article fragments.",
     inputSchema: {
       type: "object",
       properties: {
         regenerate_fragments: {
           type: "boolean",
-          description: "Regenerate all fragments even if they exist (default: false, only new articles)"
+          description:
+            "Regenerate all fragments even if they exist (default: false, only new articles)",
         },
         verbose: {
           type: "boolean",
-          description: "Include detailed output (default: false)"
-        }
-      }
-    }
+          description: "Include detailed output (default: false)",
+        },
+      },
+    },
   },
 
   handler: async (args) => {
     try {
-      const regenerateFragments = args.regenerate_fragments as boolean || false;
-      const verbose = args.verbose as boolean || false;
+      const regenerateFragments =
+        (args.regenerate_fragments as boolean) || false;
+      const verbose = (args.verbose as boolean) || false;
 
       // Ensure output directories exist
       await fs.mkdir(API_DIR, { recursive: true });
@@ -262,7 +287,7 @@ export const tool: ToolModule = {
           keywords,
           inlinks: dbArticle.inlinks,
           outlinks: dbArticle.outlinks,
-          created: dbArticle.created
+          created: dbArticle.created,
         };
 
         searchIndex.push({
@@ -273,7 +298,7 @@ export const tool: ToolModule = {
           category: entry.category,
           keywords: entry.keywords,
           inlinks: entry.inlinks,
-          outlinks: entry.outlinks
+          outlinks: entry.outlinks,
         });
 
         articlesIndex.push(entry);
@@ -286,7 +311,10 @@ export const tool: ToolModule = {
 
         // Generate fragment
         const fragmentPath = path.join(FRAGMENTS_DIR, dbArticle.filename);
-        const fragmentExists = await fs.access(fragmentPath).then(() => true).catch(() => false);
+        const fragmentExists = await fs
+          .access(fragmentPath)
+          .then(() => true)
+          .catch(() => false);
 
         if (regenerateFragments || !fragmentExists) {
           const fragment = generateFragment(
@@ -294,7 +322,7 @@ export const tool: ToolModule = {
             dbArticle.title,
             entry.type,
             summary,
-            infoboxFields
+            infoboxFields,
           );
           await fs.writeFile(fragmentPath, fragment, "utf-8");
           fragmentsCreated++;
@@ -307,27 +335,38 @@ export const tool: ToolModule = {
       await fs.writeFile(
         path.join(API_DIR, "search-index.json"),
         JSON.stringify(searchIndex, null, 2),
-        "utf-8"
+        "utf-8",
       );
 
       // Write full articles index
       await fs.writeFile(
         path.join(API_DIR, "articles.json"),
-        JSON.stringify({
-          total: articlesIndex.length,
-          generated: new Date().toISOString(),
-          articles: articlesIndex
-        }, null, 2),
-        "utf-8"
+        JSON.stringify(
+          {
+            total: articlesIndex.length,
+            generated: new Date().toISOString(),
+            articles: articlesIndex,
+          },
+          null,
+          2,
+        ),
+        "utf-8",
       );
 
       // Write random helper (list of filenames for random selection)
       await fs.writeFile(
         path.join(API_DIR, "random.json"),
-        JSON.stringify({
-          articles: articlesIndex.map(a => ({ filename: a.filename, title: a.title }))
-        }, null, 2),
-        "utf-8"
+        JSON.stringify(
+          {
+            articles: articlesIndex.map((a) => ({
+              filename: a.filename,
+              title: a.title,
+            })),
+          },
+          null,
+          2,
+        ),
+        "utf-8",
       );
 
       // Generate category pages
@@ -336,7 +375,7 @@ export const tool: ToolModule = {
         await fs.writeFile(
           path.join(CATEGORIES_DIR, `${category}.html`),
           categoryPage,
-          "utf-8"
+          "utf-8",
         );
       }
 
@@ -345,7 +384,7 @@ export const tool: ToolModule = {
       await fs.writeFile(
         path.join(CATEGORIES_DIR, "all.html"),
         allPage,
-        "utf-8"
+        "utf-8",
       );
 
       const result = {
@@ -353,21 +392,21 @@ export const tool: ToolModule = {
         searchIndex: {
           path: "api/search-index.json",
           entries: searchIndex.length,
-          sizeBytes: JSON.stringify(searchIndex).length
+          sizeBytes: JSON.stringify(searchIndex).length,
         },
         articlesIndex: {
           path: "api/articles.json",
-          entries: articlesIndex.length
+          entries: articlesIndex.length,
         },
         fragments: {
           path: "fragments/",
           created: fragmentsCreated,
-          skipped: fragmentsSkipped
+          skipped: fragmentsSkipped,
         },
         categories: {
           path: "categories/",
-          pages: Object.keys(categorizedArticles).length + 1 // +1 for all.html
-        }
+          pages: Object.keys(categorizedArticles).length + 1, // +1 for all.html
+        },
       };
 
       if (verbose) {
@@ -375,19 +414,23 @@ export const tool: ToolModule = {
       }
 
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify(result, null, 2)
-        }]
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
       };
     } catch (e) {
       return {
-        content: [{
-          type: "text",
-          text: `Error building index: ${e instanceof Error ? e.message : e}`
-        }],
-        isError: true
+        content: [
+          {
+            type: "text",
+            text: `Error building index: ${e instanceof Error ? e.message : e}`,
+          },
+        ],
+        isError: true,
       };
     }
-  }
+  },
 };

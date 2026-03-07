@@ -182,31 +182,41 @@ export interface DiscoveryQueueItem {
 
 export function getArticleCount(): number {
   const db = getDatabase();
-  const row = db.prepare("SELECT COUNT(*) as count FROM articles").get() as { count: number };
+  const row = db.prepare("SELECT COUNT(*) as count FROM articles").get() as {
+    count: number;
+  };
   return row.count;
 }
 
 export function getAllArticles(): Article[] {
   const db = getDatabase();
-  return db.prepare("SELECT * FROM articles ORDER BY filename").all() as Article[];
+  return db
+    .prepare("SELECT * FROM articles ORDER BY filename")
+    .all() as Article[];
 }
 
 export function getArticleByFilename(filename: string): Article | undefined {
   const db = getDatabase();
-  return db.prepare("SELECT * FROM articles WHERE filename = ?").get(filename) as Article | undefined;
+  return db
+    .prepare("SELECT * FROM articles WHERE filename = ?")
+    .get(filename) as Article | undefined;
 }
 
 export function getBrokenLinks(): { target: string; sources: string[] }[] {
   const db = getDatabase();
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT l.target_filename as target, GROUP_CONCAT(a.filename) as sources
     FROM links l
     JOIN articles a ON l.source_id = a.id
     WHERE l.target_filename NOT IN (SELECT filename FROM articles)
     GROUP BY l.target_filename
-  `).all() as { target: string; sources: string }[];
+  `,
+    )
+    .all() as { target: string; sources: string }[];
 
-  return rows.map(row => ({
+  return rows.map((row) => ({
     target: row.target,
     sources: row.sources.split(","),
   }));
@@ -214,11 +224,15 @@ export function getBrokenLinks(): { target: string; sources: string[] }[] {
 
 export function getOrphanArticles(): string[] {
   const db = getDatabase();
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT filename FROM articles
     WHERE inlinks = 0 AND filename != 'index.html'
-  `).all() as { filename: string }[];
-  return rows.map(row => row.filename);
+  `,
+    )
+    .all() as { filename: string }[];
+  return rows.map((row) => row.filename);
 }
 
 export function getPlaceholderArticles(): string[] {
@@ -229,9 +243,13 @@ export function getPlaceholderArticles(): string[] {
 
 export function getCategoryDistribution(): Record<string, number> {
   const db = getDatabase();
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT category, COUNT(*) as count FROM articles GROUP BY category
-  `).all() as { category: string; count: number }[];
+  `,
+    )
+    .all() as { category: string; count: number }[];
 
   const distribution: Record<string, number> = {};
   for (const row of rows) {
@@ -242,48 +260,68 @@ export function getCategoryDistribution(): Record<string, number> {
 
 export function getTotalLinks(): number {
   const db = getDatabase();
-  const row = db.prepare("SELECT COUNT(*) as count FROM links").get() as { count: number };
+  const row = db.prepare("SELECT COUNT(*) as count FROM links").get() as {
+    count: number;
+  };
   return row.count;
 }
 
 export function getResearchersByStatus(status: string): Researcher[] {
   const db = getDatabase();
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT * FROM researchers WHERE status LIKE ?
-  `).all(`%${status}%`) as Researcher[];
+  `,
+    )
+    .all(`%${status}%`) as Researcher[];
 }
 
 export function getAllResearchers(): Researcher[] {
   const db = getDatabase();
-  return db.prepare("SELECT * FROM researchers ORDER BY name").all() as Researcher[];
+  return db
+    .prepare("SELECT * FROM researchers ORDER BY name")
+    .all() as Researcher[];
 }
 
 export function getResearcherByKey(key: string): Researcher | undefined {
   const db = getDatabase();
-  return db.prepare("SELECT * FROM researchers WHERE key = ?").get(key) as Researcher | undefined;
+  return db.prepare("SELECT * FROM researchers WHERE key = ?").get(key) as
+    | Researcher
+    | undefined;
 }
 
 export function getResearcherContributions(researcherId: number): string[] {
   const db = getDatabase();
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT contribution FROM researcher_contributions WHERE researcher_id = ?
-  `).all(researcherId) as { contribution: string }[];
-  return rows.map(row => row.contribution);
+  `,
+    )
+    .all(researcherId) as { contribution: string }[];
+  return rows.map((row) => row.contribution);
 }
 
 export function getResearcherArticles(researcherId: number): string[] {
   const db = getDatabase();
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT a.filename FROM articles a
     JOIN article_researchers ar ON a.id = ar.article_id
     WHERE ar.researcher_id = ?
-  `).all(researcherId) as { filename: string }[];
-  return rows.map(row => row.filename);
+  `,
+    )
+    .all(researcherId) as { filename: string }[];
+  return rows.map((row) => row.filename);
 }
 
 export function getAllInstitutions(): Institution[] {
   const db = getDatabase();
-  return db.prepare("SELECT * FROM institutions ORDER BY name").all() as Institution[];
+  return db
+    .prepare("SELECT * FROM institutions ORDER BY name")
+    .all() as Institution[];
 }
 
 export function getUsedInfoboxColors(): string[] {
@@ -306,23 +344,31 @@ export function insertArticle(article: Omit<Article, "id">): number {
     article.category,
     article.outlinks,
     article.inlinks,
-    article.created
+    article.created,
   );
   return result.lastInsertRowid as number;
 }
 
-export function updateArticleLinkCounts(filename: string, outlinks: number, inlinks: number): void {
+export function updateArticleLinkCounts(
+  filename: string,
+  outlinks: number,
+  inlinks: number,
+): void {
   const db = getDatabase();
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE articles SET outlinks = ?, inlinks = ? WHERE filename = ?
-  `).run(outlinks, inlinks, filename);
+  `,
+  ).run(outlinks, inlinks, filename);
 }
 
 export function insertLink(sourceId: number, targetFilename: string): void {
   const db = getDatabase();
-  db.prepare(`
+  db.prepare(
+    `
     INSERT OR IGNORE INTO links (source_id, target_filename) VALUES (?, ?)
-  `).run(sourceId, targetFilename);
+  `,
+  ).run(sourceId, targetFilename);
 }
 
 export function clearLinks(sourceId: number): void {
@@ -344,33 +390,51 @@ export function insertResearcher(researcher: Omit<Researcher, "id">): number {
     researcher.nationality,
     researcher.active_years,
     researcher.usage_count,
-    researcher.status
+    researcher.status,
   );
   return result.lastInsertRowid as number;
 }
 
-export function updateResearcherUsage(key: string, usageCount: number, status: string): void {
+export function updateResearcherUsage(
+  key: string,
+  usageCount: number,
+  status: string,
+): void {
   const db = getDatabase();
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE researchers SET usage_count = ?, status = ? WHERE key = ?
-  `).run(usageCount, status, key);
+  `,
+  ).run(usageCount, status, key);
 }
 
-export function insertResearcherContribution(researcherId: number, contribution: string): void {
+export function insertResearcherContribution(
+  researcherId: number,
+  contribution: string,
+): void {
   const db = getDatabase();
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO researcher_contributions (researcher_id, contribution) VALUES (?, ?)
-  `).run(researcherId, contribution);
+  `,
+  ).run(researcherId, contribution);
 }
 
-export function linkArticleResearcher(articleId: number, researcherId: number): void {
+export function linkArticleResearcher(
+  articleId: number,
+  researcherId: number,
+): void {
   const db = getDatabase();
-  db.prepare(`
+  db.prepare(
+    `
     INSERT OR IGNORE INTO article_researchers (article_id, researcher_id) VALUES (?, ?)
-  `).run(articleId, researcherId);
+  `,
+  ).run(articleId, researcherId);
 }
 
-export function insertInstitution(institution: Omit<Institution, "id">): number {
+export function insertInstitution(
+  institution: Omit<Institution, "id">,
+): number {
   const db = getDatabase();
   const stmt = db.prepare(`
     INSERT OR IGNORE INTO institutions (name, location, founded, focus)
@@ -380,7 +444,7 @@ export function insertInstitution(institution: Omit<Institution, "id">): number 
     institution.name,
     institution.location,
     institution.founded,
-    institution.focus
+    institution.focus,
   );
   return result.lastInsertRowid as number;
 }
@@ -395,12 +459,14 @@ export function recalculateInlinkCounts(): void {
   db.prepare("UPDATE articles SET inlinks = 0").run();
 
   // Update inlinks based on links table (only for existing targets)
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE articles SET inlinks = (
       SELECT COUNT(*) FROM links
       WHERE links.target_filename = articles.filename
     )
-  `).run();
+  `,
+  ).run();
 }
 
 // =============================================================================
@@ -416,14 +482,16 @@ export function queueDiscoveredConcept(
   suggestedTitle: string | null,
   depth: number,
   sourceArticle: string | null,
-  priority: number = 0
+  priority: number = 0,
 ): boolean {
   const db = getDatabase();
   try {
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO discovery_queue (target_filename, suggested_title, depth, source_article, discovered_at, status, priority)
       VALUES (?, ?, ?, ?, datetime('now'), 'pending', ?)
-    `).run(targetFilename, suggestedTitle, depth, sourceArticle, priority);
+    `,
+    ).run(targetFilename, suggestedTitle, depth, sourceArticle, priority);
     return true;
   } catch {
     // Already exists (UNIQUE constraint)
@@ -434,26 +502,38 @@ export function queueDiscoveredConcept(
 /**
  * Get next item from discovery queue (highest priority, lowest depth first).
  */
-export function getNextFromDiscoveryQueue(maxDepth: number = 3): DiscoveryQueueItem | undefined {
+export function getNextFromDiscoveryQueue(
+  maxDepth: number = 3,
+): DiscoveryQueueItem | undefined {
   const db = getDatabase();
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT * FROM discovery_queue
     WHERE status = 'pending' AND depth <= ?
     ORDER BY priority DESC, depth ASC, discovered_at ASC
     LIMIT 1
-  `).get(maxDepth) as DiscoveryQueueItem | undefined;
+  `,
+    )
+    .get(maxDepth) as DiscoveryQueueItem | undefined;
 }
 
 /**
  * Get all pending items from discovery queue.
  */
-export function getPendingDiscoveryItems(maxDepth: number = 3): DiscoveryQueueItem[] {
+export function getPendingDiscoveryItems(
+  maxDepth: number = 3,
+): DiscoveryQueueItem[] {
   const db = getDatabase();
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT * FROM discovery_queue
     WHERE status = 'pending' AND depth <= ?
     ORDER BY priority DESC, depth ASC, discovered_at ASC
-  `).all(maxDepth) as DiscoveryQueueItem[];
+  `,
+    )
+    .all(maxDepth) as DiscoveryQueueItem[];
 }
 
 /**
@@ -461,9 +541,11 @@ export function getPendingDiscoveryItems(maxDepth: number = 3): DiscoveryQueueIt
  */
 export function completeDiscoveryItem(targetFilename: string): void {
   const db = getDatabase();
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE discovery_queue SET status = 'completed' WHERE target_filename = ?
-  `).run(targetFilename);
+  `,
+  ).run(targetFilename);
 }
 
 /**
@@ -471,9 +553,11 @@ export function completeDiscoveryItem(targetFilename: string): void {
  */
 export function markDiscoveryInProgress(targetFilename: string): void {
   const db = getDatabase();
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE discovery_queue SET status = 'in_progress' WHERE target_filename = ?
-  `).run(targetFilename);
+  `,
+  ).run(targetFilename);
 }
 
 /**
@@ -481,9 +565,13 @@ export function markDiscoveryInProgress(targetFilename: string): void {
  */
 export function getArticleDepth(filename: string): number {
   const db = getDatabase();
-  const row = db.prepare(`
+  const row = db
+    .prepare(
+      `
     SELECT depth FROM discovery_queue WHERE target_filename = ?
-  `).get(filename) as { depth: number } | undefined;
+  `,
+    )
+    .get(filename) as { depth: number } | undefined;
   return row?.depth ?? 0;
 }
 
@@ -498,13 +586,21 @@ export function getDiscoveryQueueStats(): {
 } {
   const db = getDatabase();
 
-  const statusCounts = db.prepare(`
+  const statusCounts = db
+    .prepare(
+      `
     SELECT status, COUNT(*) as count FROM discovery_queue GROUP BY status
-  `).all() as { status: string; count: number }[];
+  `,
+    )
+    .all() as { status: string; count: number }[];
 
-  const depthCounts = db.prepare(`
+  const depthCounts = db
+    .prepare(
+      `
     SELECT depth, COUNT(*) as count FROM discovery_queue WHERE status = 'pending' GROUP BY depth
-  `).all() as { depth: number; count: number }[];
+  `,
+    )
+    .all() as { depth: number; count: number }[];
 
   const stats = {
     pending: 0,
@@ -514,9 +610,9 @@ export function getDiscoveryQueueStats(): {
   };
 
   for (const row of statusCounts) {
-    if (row.status === 'pending') stats.pending = row.count;
-    else if (row.status === 'in_progress') stats.inProgress = row.count;
-    else if (row.status === 'completed') stats.completed = row.count;
+    if (row.status === "pending") stats.pending = row.count;
+    else if (row.status === "in_progress") stats.inProgress = row.count;
+    else if (row.status === "completed") stats.completed = row.count;
   }
 
   for (const row of depthCounts) {
@@ -531,11 +627,15 @@ export function getDiscoveryQueueStats(): {
  */
 export function pruneCompletedDiscoveryItems(daysOld: number = 7): number {
   const db = getDatabase();
-  const result = db.prepare(`
+  const result = db
+    .prepare(
+      `
     DELETE FROM discovery_queue
     WHERE status = 'completed'
     AND datetime(discovered_at) < datetime('now', '-' || ? || ' days')
-  `).run(daysOld);
+  `,
+    )
+    .run(daysOld);
   return result.changes;
 }
 
@@ -560,14 +660,16 @@ export interface TaskAssignment {
 export function claimTask(
   taskType: string,
   targetFilename: string,
-  workerId: string
+  workerId: string,
 ): boolean {
   const db = getDatabase();
   try {
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO task_assignments (task_type, target_filename, worker_id, claimed_at, status)
       VALUES (?, ?, ?, datetime('now'), 'in_progress')
-    `).run(taskType, targetFilename, workerId);
+    `,
+    ).run(taskType, targetFilename, workerId);
     return true;
   } catch {
     // UNIQUE constraint violation - task already claimed
@@ -580,11 +682,13 @@ export function claimTask(
  */
 export function completeTask(taskType: string, targetFilename: string): void {
   const db = getDatabase();
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE task_assignments
     SET status = 'completed', completed_at = datetime('now')
     WHERE task_type = ? AND target_filename = ? AND status = 'in_progress'
-  `).run(taskType, targetFilename);
+  `,
+  ).run(taskType, targetFilename);
 }
 
 /**
@@ -592,10 +696,12 @@ export function completeTask(taskType: string, targetFilename: string): void {
  */
 export function releaseTask(taskType: string, targetFilename: string): void {
   const db = getDatabase();
-  db.prepare(`
+  db.prepare(
+    `
     DELETE FROM task_assignments
     WHERE task_type = ? AND target_filename = ? AND status = 'in_progress'
-  `).run(taskType, targetFilename);
+  `,
+  ).run(taskType, targetFilename);
 }
 
 /**
@@ -603,21 +709,32 @@ export function releaseTask(taskType: string, targetFilename: string): void {
  */
 export function getClaimedTaskFilenames(): string[] {
   const db = getDatabase();
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT target_filename FROM task_assignments WHERE status = 'in_progress'
-  `).all() as { target_filename: string }[];
-  return rows.map(r => r.target_filename);
+  `,
+    )
+    .all() as { target_filename: string }[];
+  return rows.map((r) => r.target_filename);
 }
 
 /**
  * Check if a specific task is currently claimed.
  */
-export function isTaskClaimed(taskType: string, targetFilename: string): boolean {
+export function isTaskClaimed(
+  taskType: string,
+  targetFilename: string,
+): boolean {
   const db = getDatabase();
-  const row = db.prepare(`
+  const row = db
+    .prepare(
+      `
     SELECT 1 FROM task_assignments
     WHERE task_type = ? AND target_filename = ? AND status = 'in_progress'
-  `).get(taskType, targetFilename);
+  `,
+    )
+    .get(taskType, targetFilename);
   return !!row;
 }
 
@@ -627,11 +744,15 @@ export function isTaskClaimed(taskType: string, targetFilename: string): boolean
  */
 export function cleanupStaleTasks(timeoutMinutes: number = 30): number {
   const db = getDatabase();
-  const result = db.prepare(`
+  const result = db
+    .prepare(
+      `
     DELETE FROM task_assignments
     WHERE status = 'in_progress'
     AND datetime(claimed_at) < datetime('now', '-' || ? || ' minutes')
-  `).run(timeoutMinutes);
+  `,
+    )
+    .run(timeoutMinutes);
   return result.changes;
 }
 
@@ -639,9 +760,14 @@ export function cleanupStaleTasks(timeoutMinutes: number = 30): number {
  * Get broken links excluding currently claimed tasks.
  * This is the key function for preventing race conditions.
  */
-export function getAvailableBrokenLinks(): { target: string; sources: string[] }[] {
+export function getAvailableBrokenLinks(): {
+  target: string;
+  sources: string[];
+}[] {
   const db = getDatabase();
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT l.target_filename as target, GROUP_CONCAT(a.filename) as sources
     FROM links l
     JOIN articles a ON l.source_id = a.id
@@ -650,9 +776,11 @@ export function getAvailableBrokenLinks(): { target: string; sources: string[] }
         SELECT target_filename FROM task_assignments WHERE status = 'in_progress'
       )
     GROUP BY l.target_filename
-  `).all() as { target: string; sources: string }[];
+  `,
+    )
+    .all() as { target: string; sources: string }[];
 
-  return rows.map(row => ({
+  return rows.map((row) => ({
     target: row.target,
     sources: row.sources.split(","),
   }));
@@ -663,14 +791,18 @@ export function getAvailableBrokenLinks(): { target: string; sources: string[] }
  */
 export function getAvailableOrphanArticles(): string[] {
   const db = getDatabase();
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT filename FROM articles
     WHERE inlinks = 0 AND filename != 'index.html'
       AND filename NOT IN (
         SELECT target_filename FROM task_assignments WHERE status = 'in_progress'
       )
-  `).all() as { filename: string }[];
-  return rows.map(row => row.filename);
+  `,
+    )
+    .all() as { filename: string }[];
+  return rows.map((row) => row.filename);
 }
 
 /**
@@ -678,10 +810,14 @@ export function getAvailableOrphanArticles(): string[] {
  */
 export function pruneCompletedTaskAssignments(daysOld: number = 7): number {
   const db = getDatabase();
-  const result = db.prepare(`
+  const result = db
+    .prepare(
+      `
     DELETE FROM task_assignments
     WHERE status = 'completed'
     AND datetime(completed_at) < datetime('now', '-' || ? || ' days')
-  `).run(daysOld);
+  `,
+    )
+    .run(daysOld);
   return result.changes;
 }

@@ -833,22 +833,67 @@
     "linguistics": {
       "description": "Language, meaning, and semantic phenomena",
       "article_count": 23,
-      "core_concepts": ["semantic-drift", "ghost-vocabulary", "lexical-half-life", "oral-tradition-dynamics", "mumbai-institute-for-semantic-preservation", "zagreb-semantic-fracture"]
+      "core_concepts": [
+        "semantic-drift",
+        "ghost-vocabulary",
+        "lexical-half-life",
+        "oral-tradition-dynamics",
+        "mumbai-institute-for-semantic-preservation",
+        "zagreb-semantic-fracture"
+      ]
     },
     "consciousness": {
       "description": "Memory, awareness, and mental archaeology",
       "article_count": 23,
-      "core_concepts": ["mnemonic-commons", "consciousness-archaeology", "psychostrata", "sao-paulo-deep-core-incident", "stratum-vii-ethics-debate", "reykjavik-institute-for-boundary-consciousness", "akureyri-consciousness-breach", "liminal-consciousness-studies", "ines-marques", "collective-remembering-paradox", "stockholm-shared-vision-event"]
+      "core_concepts": [
+        "mnemonic-commons",
+        "consciousness-archaeology",
+        "psychostrata",
+        "sao-paulo-deep-core-incident",
+        "stratum-vii-ethics-debate",
+        "reykjavik-institute-for-boundary-consciousness",
+        "akureyri-consciousness-breach",
+        "liminal-consciousness-studies",
+        "ines-marques",
+        "collective-remembering-paradox",
+        "stockholm-shared-vision-event"
+      ]
     },
     "chronopsychology": {
       "description": "Time perception and temporal experience",
       "article_count": 21,
-      "core_concepts": ["temporal-debt", "temporal-debt-controversy", "great-meaning-collapse", "silent-hour-1997", "prague-institute-for-liminal-studies", "montreal-temporal-displacement", "chronological-asymmetry", "lisbon-retrograde-event", "prophetic-memory-studies", "kyoto-institute-for-temporal-cognition"]
+      "core_concepts": [
+        "temporal-debt",
+        "temporal-debt-controversy",
+        "great-meaning-collapse",
+        "silent-hour-1997",
+        "prague-institute-for-liminal-studies",
+        "montreal-temporal-displacement",
+        "chronological-asymmetry",
+        "lisbon-retrograde-event",
+        "prophetic-memory-studies",
+        "kyoto-institute-for-temporal-cognition"
+      ]
     },
     "technology": {
       "description": "Computational linguistics and AI-related semantic phenomena",
       "article_count": 23,
-      "core_concepts": ["babel-incident", "meaning-encryption", "st-petersburg-institute-for-emergency-linguistics", "semantic-forensics", "automated-narrative-erosion", "digital-folkloristics", "semantic-quarantine-protocols", "recursive-translation-degradation", "theodoros-papadimitriou", "copenhagen-semantic-cascade", "isabella-reyes", "manila-meaning-overflow", "semantic-inheritance-protocols", "semantic-telemetry-networks"]
+      "core_concepts": [
+        "babel-incident",
+        "meaning-encryption",
+        "st-petersburg-institute-for-emergency-linguistics",
+        "semantic-forensics",
+        "automated-narrative-erosion",
+        "digital-folkloristics",
+        "semantic-quarantine-protocols",
+        "recursive-translation-degradation",
+        "theodoros-papadimitriou",
+        "copenhagen-semantic-cascade",
+        "isabella-reyes",
+        "manila-meaning-overflow",
+        "semantic-inheritance-protocols",
+        "semantic-telemetry-networks"
+      ]
     }
   },
   "article_types": {

@@ -35,14 +35,17 @@ export function exportEcosystemJson(): void {
   const categoryDist = getCategoryDistribution();
 
   // Build articles object (keyed by filename without .html)
-  const articlesObj: Record<string, {
-    title: string;
-    type: string;
-    category: string;
-    outlinks: number;
-    inlinks: number;
-    created: string;
-  }> = {};
+  const articlesObj: Record<
+    string,
+    {
+      title: string;
+      type: string;
+      category: string;
+      outlinks: number;
+      inlinks: number;
+      created: string;
+    }
+  > = {};
 
   for (const article of articles) {
     const key = article.filename.replace(".html", "");
@@ -65,18 +68,21 @@ export function exportEcosystemJson(): void {
     meta: "Index and navigation pages",
   };
 
-  const categoriesObj: Record<string, {
-    description: string;
-    article_count: number;
-    core_concepts: string[];
-  }> = {};
+  const categoriesObj: Record<
+    string,
+    {
+      description: string;
+      article_count: number;
+      core_concepts: string[];
+    }
+  > = {};
 
   for (const [category, count] of Object.entries(categoryDist)) {
     // Get core concepts (first 6 articles in this category)
     const coreArticles = articles
-      .filter(a => a.category === category)
+      .filter((a) => a.category === category)
       .slice(0, 6)
-      .map(a => a.filename.replace(".html", ""));
+      .map((a) => a.filename.replace(".html", ""));
 
     categoriesObj[category] = {
       description: categoryDescriptions[category] || category,
@@ -86,9 +92,10 @@ export function exportEcosystemJson(): void {
   }
 
   // Calculate stats
-  const avgLinksPerArticle = articles.length > 0
-    ? Math.round((totalLinks / articles.length) * 10) / 10
-    : 0;
+  const avgLinksPerArticle =
+    articles.length > 0
+      ? Math.round((totalLinks / articles.length) * 10) / 10
+      : 0;
 
   const ecosystem = {
     _meta: {
@@ -106,10 +113,14 @@ export function exportEcosystemJson(): void {
     articles: articlesObj,
     categories: categoriesObj,
     article_types: {
-      phenomenon: "Observable effects or occurrences (e.g., Temporal Debt, Ghost Vocabulary)",
-      theory: "Explanatory frameworks (e.g., Lexical Half-life, Mnemonic Commons)",
-      methodology: "Research techniques (e.g., Consciousness Archaeology, Echo Cartography)",
-      practice: "Applied interventions (e.g., Semantic Hygiene, Collective Memory Maintenance)",
+      phenomenon:
+        "Observable effects or occurrences (e.g., Temporal Debt, Ghost Vocabulary)",
+      theory:
+        "Explanatory frameworks (e.g., Lexical Half-life, Mnemonic Commons)",
+      methodology:
+        "Research techniques (e.g., Consciousness Archaeology, Echo Cartography)",
+      practice:
+        "Applied interventions (e.g., Semantic Hygiene, Collective Memory Maintenance)",
       field: "Academic disciplines (e.g., Chronolinguistics)",
       institution: "Organizations and research bodies",
       hub: "Index and navigation pages",
@@ -140,17 +151,20 @@ export function exportResearchersJson(): void {
   const institutions = getAllInstitutions();
 
   // Build researchers object
-  const researchersObj: Record<string, {
-    name: string;
-    field: string;
-    institution: string;
-    nationality: string;
-    active_years: string;
-    key_contributions: string[];
-    articles_mentioned: string[];
-    usage_count: number;
-    status: string;
-  }> = {};
+  const researchersObj: Record<
+    string,
+    {
+      name: string;
+      field: string;
+      institution: string;
+      nationality: string;
+      active_years: string;
+      key_contributions: string[];
+      articles_mentioned: string[];
+      usage_count: number;
+      status: string;
+    }
+  > = {};
 
   for (const researcher of researchers) {
     const contributions = getResearcherContributions(researcher.id);
@@ -163,26 +177,29 @@ export function exportResearchersJson(): void {
       nationality: researcher.nationality || "",
       active_years: researcher.active_years || "",
       key_contributions: contributions,
-      articles_mentioned: articlesMentioned.map(f => f.replace(".html", "")),
+      articles_mentioned: articlesMentioned.map((f) => f.replace(".html", "")),
       usage_count: researcher.usage_count,
       status: researcher.status,
     };
   }
 
   // Build institutions object
-  const institutionsObj: Record<string, {
-    name: string;
-    location: string;
-    founded: string;
-    focus: string;
-    key_researchers: string[];
-  }> = {};
+  const institutionsObj: Record<
+    string,
+    {
+      name: string;
+      location: string;
+      founded: string;
+      focus: string;
+      key_researchers: string[];
+    }
+  > = {};
 
   for (const inst of institutions) {
     // Find researchers at this institution
     const keyResearchers = researchers
-      .filter(r => r.institution === inst.name)
-      .map(r => r.key);
+      .filter((r) => r.institution === inst.name)
+      .map((r) => r.key);
 
     // Create a key from the name (lowercase, underscores)
     const instKey = inst.name
@@ -201,9 +218,11 @@ export function exportResearchersJson(): void {
 
   const researchersFile = {
     _meta: {
-      description: "Registry of fictional researchers in the Not-Wikipedia universe",
+      description:
+        "Registry of fictional researchers in the Not-Wikipedia universe",
       last_updated: new Date().toISOString().split("T")[0],
-      usage_guidelines: "When creating new articles, check this registry. Reuse existing researchers sparingly (max 3-4 articles each). Create new researchers for fresh perspectives. Update this file when adding new researchers.",
+      usage_guidelines:
+        "When creating new articles, check this registry. Reuse existing researchers sparingly (max 3-4 articles each). Create new researchers for fresh perspectives. Update this file when adding new researchers.",
     },
     researchers: researchersObj,
     institutions: institutionsObj,

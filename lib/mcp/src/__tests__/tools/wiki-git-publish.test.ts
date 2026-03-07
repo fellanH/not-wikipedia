@@ -85,14 +85,17 @@ describe("wiki-git-publish", () => {
 
       // First call should be staging
       expect(mockExecAsync).toHaveBeenCalledWith(
-        expect.stringContaining('git -C "/mock/wiki-content" add -A')
+        expect.stringContaining('git -C "/mock/wiki-content" add -A'),
       );
     });
 
     it("generates descriptive commit message with file count", async () => {
       mockExecAsync
         .mockResolvedValueOnce({ stdout: "", stderr: "" }) // git add -A
-        .mockResolvedValueOnce({ stdout: "M wiki/a.html\nM wiki/b.html\nA wiki/c.html\n", stderr: "" }) // git status
+        .mockResolvedValueOnce({
+          stdout: "M wiki/a.html\nM wiki/b.html\nA wiki/c.html\n",
+          stderr: "",
+        }) // git status
         .mockResolvedValueOnce({ stdout: "", stderr: "" }) // git commit
         .mockResolvedValueOnce({ stdout: "abc1234\n", stderr: "" }) // git rev-parse
         .mockResolvedValueOnce({ stdout: "", stderr: "" }); // git push
@@ -101,7 +104,7 @@ describe("wiki-git-publish", () => {
 
       // Commit should include auto-generated message with file count
       expect(mockExecAsync).toHaveBeenCalledWith(
-        expect.stringContaining('commit -m "Update: 3 file(s) changed"')
+        expect.stringContaining('commit -m "Update: 3 file(s) changed"'),
       );
     });
 
@@ -116,7 +119,7 @@ describe("wiki-git-publish", () => {
       await tool.handler({ commit_message: "Custom commit message" });
 
       expect(mockExecAsync).toHaveBeenCalledWith(
-        expect.stringContaining('commit -m "Custom commit message"')
+        expect.stringContaining('commit -m "Custom commit message"'),
       );
     });
 
@@ -143,7 +146,7 @@ describe("wiki-git-publish", () => {
       await tool.handler({ commit_message: 'Message with "quotes"' });
 
       expect(mockExecAsync).toHaveBeenCalledWith(
-        expect.stringContaining('commit -m "Message with \\"quotes\\""')
+        expect.stringContaining('commit -m "Message with \\"quotes\\""'),
       );
     });
 
@@ -173,7 +176,7 @@ describe("wiki-git-publish", () => {
       await tool.handler({});
 
       expect(mockExecAsync).toHaveBeenCalledWith(
-        expect.stringContaining('git -C "/mock/wiki-content" push origin main')
+        expect.stringContaining('git -C "/mock/wiki-content" push origin main'),
       );
     });
 
@@ -198,7 +201,9 @@ describe("wiki-git-publish", () => {
       // Should still report success (commit worked)
       expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain("Success");
-      expect(result.content[0].text).toContain("Pushed:** No (failed after 3 attempts)");
+      expect(result.content[0].text).toContain(
+        "Pushed:** No (failed after 3 attempts)",
+      );
     });
 
     it("reports partial success (commit ok, push failed after retries)", async () => {
@@ -318,7 +323,7 @@ describe("wiki-git-publish", () => {
       // Should not attempt push
       expect(mockExecAsync).toHaveBeenCalledTimes(4);
       expect(mockExecAsync).not.toHaveBeenCalledWith(
-        expect.stringContaining("push")
+        expect.stringContaining("push"),
       );
 
       expect(result.content[0].text).toContain("Pushed:** No");
@@ -341,7 +346,9 @@ describe("wiki-git-publish", () => {
 
   describe("error handling", () => {
     it("handles git add failure", async () => {
-      mockExecAsync.mockRejectedValueOnce(new Error("fatal: not a git repository"));
+      mockExecAsync.mockRejectedValueOnce(
+        new Error("fatal: not a git repository"),
+      );
 
       const result = await tool.handler({});
 
@@ -365,7 +372,9 @@ describe("wiki-git-publish", () => {
       mockExecAsync
         .mockResolvedValueOnce({ stdout: "", stderr: "" }) // git add -A
         .mockResolvedValueOnce({ stdout: "M wiki/article.html\n", stderr: "" }) // git status
-        .mockRejectedValueOnce(new Error("commit failed: author identity unknown")); // git commit fails
+        .mockRejectedValueOnce(
+          new Error("commit failed: author identity unknown"),
+        ); // git commit fails
 
       const result = await tool.handler({});
 
@@ -466,7 +475,7 @@ describe("wiki-git-publish", () => {
       await tool.handler({});
 
       expect(mockExecAsync).toHaveBeenCalledWith(
-        expect.stringContaining("status --porcelain")
+        expect.stringContaining("status --porcelain"),
       );
     });
 
@@ -481,7 +490,7 @@ describe("wiki-git-publish", () => {
       await tool.handler({});
 
       expect(mockExecAsync).toHaveBeenCalledWith(
-        expect.stringContaining("rev-parse --short HEAD")
+        expect.stringContaining("rev-parse --short HEAD"),
       );
     });
   });
@@ -503,7 +512,10 @@ describe("wiki-git-publish", () => {
     it("counts multiple files correctly", async () => {
       mockExecAsync
         .mockResolvedValueOnce({ stdout: "", stderr: "" }) // git add -A
-        .mockResolvedValueOnce({ stdout: "M wiki/a.html\nA wiki/b.html\nD wiki/c.html\n", stderr: "" }) // git status
+        .mockResolvedValueOnce({
+          stdout: "M wiki/a.html\nA wiki/b.html\nD wiki/c.html\n",
+          stderr: "",
+        }) // git status
         .mockResolvedValueOnce({ stdout: "", stderr: "" }) // git commit
         .mockResolvedValueOnce({ stdout: "abc1234\n", stderr: "" }) // git rev-parse
         .mockResolvedValueOnce({ stdout: "", stderr: "" }); // git push

@@ -72,7 +72,11 @@ describe("wiki-edit-article", () => {
       const result = await tool.handler({
         filename: "test-article.html",
         operations: [
-          { type: "update_section", section_id: "History", content: "Updated history content." },
+          {
+            type: "update_section",
+            section_id: "History",
+            content: "Updated history content.",
+          },
         ],
       });
 
@@ -96,7 +100,11 @@ describe("wiki-edit-article", () => {
       await tool.handler({
         filename: "test-article.html",
         operations: [
-          { type: "update_section", section_id: "Background", content: "New background info." },
+          {
+            type: "update_section",
+            section_id: "Background",
+            content: "New background info.",
+          },
         ],
       });
 
@@ -119,7 +127,11 @@ describe("wiki-edit-article", () => {
       const result = await tool.handler({
         filename: "test-article.html",
         operations: [
-          { type: "update_section", section_id: "NonExistent", content: "New content." },
+          {
+            type: "update_section",
+            section_id: "NonExistent",
+            content: "New content.",
+          },
         ],
       });
 
@@ -145,7 +157,11 @@ describe("wiki-edit-article", () => {
       await tool.handler({
         filename: "test-article.html",
         operations: [
-          { type: "update_section", section_id: "Middle", content: "Updated middle content." },
+          {
+            type: "update_section",
+            section_id: "Middle",
+            content: "Updated middle content.",
+          },
         ],
       });
 
@@ -203,7 +219,13 @@ describe("wiki-edit-article", () => {
 
       await tool.handler({
         filename: "test-article.html",
-        operations: [{ type: "add_section", section_title: "New Section", content: "Content." }],
+        operations: [
+          {
+            type: "add_section",
+            section_title: "New Section",
+            content: "Content.",
+          },
+        ],
       });
 
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
@@ -232,7 +254,9 @@ describe("wiki-edit-article", () => {
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
       const writtenHtml = writeCall[1] as string;
 
-      expect(writtenHtml).toContain('<a href="related-article.html">Related Article</a>');
+      expect(writtenHtml).toContain(
+        '<a href="related-article.html">Related Article</a>',
+      );
     });
 
     it("adds link with .html extension when provided", async () => {
@@ -247,7 +271,9 @@ describe("wiki-edit-article", () => {
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
       const writtenHtml = writeCall[1] as string;
 
-      expect(writtenHtml).toContain('<a href="another-page.html">Another Page</a>');
+      expect(writtenHtml).toContain(
+        '<a href="another-page.html">Another Page</a>',
+      );
     });
 
     it("removes placeholder when adding first link", async () => {
@@ -297,7 +323,9 @@ describe("wiki-edit-article", () => {
 
       await tool.handler({
         filename: "test-article.html",
-        operations: [{ type: "append_see_also", link: "some-long-article-name" }],
+        operations: [
+          { type: "append_see_also", link: "some-long-article-name" },
+        ],
       });
 
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
@@ -314,14 +342,22 @@ describe("wiki-edit-article", () => {
 
       await tool.handler({
         filename: "test-article.html",
-        operations: [{ type: "update_infobox", infobox_field: "Status", infobox_value: "Inactive" }],
+        operations: [
+          {
+            type: "update_infobox",
+            infobox_field: "Status",
+            infobox_value: "Inactive",
+          },
+        ],
       });
 
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
       const writtenHtml = writeCall[1] as string;
 
-      expect(writtenHtml).toContain('<th scope="row">Status</th><td>Inactive</td>');
-      expect(writtenHtml).not.toContain('<td>Active</td>');
+      expect(writtenHtml).toContain(
+        '<th scope="row">Status</th><td>Inactive</td>',
+      );
+      expect(writtenHtml).not.toContain("<td>Active</td>");
     });
 
     it("adds new infobox field if not exists", async () => {
@@ -330,13 +366,21 @@ describe("wiki-edit-article", () => {
 
       await tool.handler({
         filename: "test-article.html",
-        operations: [{ type: "update_infobox", infobox_field: "Location", infobox_value: "USA" }],
+        operations: [
+          {
+            type: "update_infobox",
+            infobox_field: "Location",
+            infobox_value: "USA",
+          },
+        ],
       });
 
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
       const writtenHtml = writeCall[1] as string;
 
-      expect(writtenHtml).toContain('<th scope="row">Location</th><td>USA</td>');
+      expect(writtenHtml).toContain(
+        '<th scope="row">Location</th><td>USA</td>',
+      );
     });
   });
 
@@ -412,14 +456,18 @@ describe("wiki-edit-article", () => {
 
       await tool.handler({
         filename: "test-article.html",
-        operations: [{ type: "set_warning", warning: "This article needs review." }],
+        operations: [
+          { type: "set_warning", warning: "This article needs review." },
+        ],
       });
 
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
       const writtenHtml = writeCall[1] as string;
 
       expect(writtenHtml).toContain('<div class="ambox ambox-warning">');
-      expect(writtenHtml).toContain("<strong>Warning:</strong> This article needs review.");
+      expect(writtenHtml).toContain(
+        "<strong>Warning:</strong> This article needs review.",
+      );
     });
 
     it("replaces existing warning", async () => {
@@ -458,7 +506,9 @@ describe("wiki-edit-article", () => {
 
       await tool.handler({
         filename: "test-article.html",
-        operations: [{ type: "append_content", content: "Additional paragraph content." }],
+        operations: [
+          { type: "append_content", content: "Additional paragraph content." },
+        ],
       });
 
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
@@ -487,7 +537,13 @@ describe("wiki-edit-article", () => {
 
       await tool.handler({
         filename: "test-article.html",
-        operations: [{ type: "update_section", section_id: "Description", content: "Simple replacement." }],
+        operations: [
+          {
+            type: "update_section",
+            section_id: "Description",
+            content: "Simple replacement.",
+          },
+        ],
       });
 
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
@@ -505,7 +561,13 @@ describe("wiki-edit-article", () => {
 
       await tool.handler({
         filename: "test-article.html",
-        operations: [{ type: "update_section", section_id: "Empty_Section", content: "Now has content." }],
+        operations: [
+          {
+            type: "update_section",
+            section_id: "Empty_Section",
+            content: "Now has content.",
+          },
+        ],
       });
 
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
@@ -527,7 +589,9 @@ describe("wiki-edit-article", () => {
 
       const result = await tool.handler({
         filename: "test-article.html",
-        operations: [{ type: "update_section", section_id: "Broken", content: "Updated." }],
+        operations: [
+          { type: "update_section", section_id: "Broken", content: "Updated." },
+        ],
       });
 
       // Should not crash
@@ -544,7 +608,11 @@ describe("wiki-edit-article", () => {
       const result = await tool.handler({
         filename: "test-article.html",
         operations: [
-          { type: "update_section", section_id: "History", content: "Updated history." },
+          {
+            type: "update_section",
+            section_id: "History",
+            content: "Updated history.",
+          },
           { type: "append_see_also", link: "related-topic" },
           { type: "add_category", category: "Technology" },
         ],
@@ -574,7 +642,13 @@ describe("wiki-edit-article", () => {
       // The implementation uses case-insensitive regex
       await tool.handler({
         filename: "test-article.html",
-        operations: [{ type: "update_section", section_id: "History", content: "Updated." }],
+        operations: [
+          {
+            type: "update_section",
+            section_id: "History",
+            content: "Updated.",
+          },
+        ],
       });
 
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
@@ -612,7 +686,9 @@ describe("wiki-edit-article", () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("filename and operations required");
+      expect(result.content[0].text).toContain(
+        "filename and operations required",
+      );
     });
 
     it("returns error for empty operations", async () => {
@@ -622,7 +698,9 @@ describe("wiki-edit-article", () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("filename and operations required");
+      expect(result.content[0].text).toContain(
+        "filename and operations required",
+      );
     });
 
     it("returns error for non-existent file", async () => {
@@ -705,7 +783,8 @@ describe("wiki-edit-article", () => {
     });
 
     it("defines all expected operation types", () => {
-      const operationsSchema = tool.definition.inputSchema.properties.operations as any;
+      const operationsSchema = tool.definition.inputSchema.properties
+        .operations as any;
       const typeEnum = operationsSchema.items.properties.type.enum;
 
       expect(typeEnum).toContain("add_section");

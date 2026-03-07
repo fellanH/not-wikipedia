@@ -73,7 +73,7 @@ function filenameToTitle(filename: string): string {
   return filename
     .replace(/\.html$/, "")
     .split("-")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
 
@@ -84,7 +84,7 @@ async function extractLinks(articlePath: string): Promise<string[]> {
   try {
     const content = await fs.readFile(articlePath, "utf-8");
     const linkMatches = content.match(/href="([^"]*\.html)"/g) || [];
-    const links = linkMatches.map(match => {
+    const links = linkMatches.map((match) => {
       const href = match.match(/href="([^"]*)"/)?.[1] || "";
       return href;
     });
@@ -130,30 +130,39 @@ function calculatePriority(depth: number, referenceCount: number = 1): number {
  */
 function passesRelevanceFilter(
   filename: string,
-  filter?: DiscoverInput["relevance_filter"]
+  filter?: DiscoverInput["relevance_filter"],
 ): { passes: boolean; reason?: string } {
   if (!filter) return { passes: true };
 
   const baseFilename = filename.replace(/\.html$/, "").toLowerCase();
 
   // Check minimum length
-  if (filter.min_filename_length && baseFilename.length < filter.min_filename_length) {
-    return { passes: false, reason: `filename too short (< ${filter.min_filename_length} chars)` };
+  if (
+    filter.min_filename_length &&
+    baseFilename.length < filter.min_filename_length
+  ) {
+    return {
+      passes: false,
+      reason: `filename too short (< ${filter.min_filename_length} chars)`,
+    };
   }
 
   // Check excluded keywords
   if (filter.excluded_keywords && filter.excluded_keywords.length > 0) {
     for (const keyword of filter.excluded_keywords) {
       if (baseFilename.includes(keyword.toLowerCase())) {
-        return { passes: false, reason: `contains excluded keyword: ${keyword}` };
+        return {
+          passes: false,
+          reason: `contains excluded keyword: ${keyword}`,
+        };
       }
     }
   }
 
   // Check required keywords (at least one must match)
   if (filter.required_keywords && filter.required_keywords.length > 0) {
-    const hasRequiredKeyword = filter.required_keywords.some(keyword =>
-      baseFilename.includes(keyword.toLowerCase())
+    const hasRequiredKeyword = filter.required_keywords.some((keyword) =>
+      baseFilename.includes(keyword.toLowerCase()),
     );
     if (!hasRequiredKeyword) {
       return { passes: false, reason: `missing required keywords` };
@@ -168,7 +177,11 @@ function passesRelevanceFilter(
  * Scans an article and queues new concepts for recursive generation.
  */
 async function discoverConcepts(input: DiscoverInput): Promise<DiscoverResult> {
-  const { source_article, max_depth = DEFAULT_MAX_DEPTH, relevance_filter } = input;
+  const {
+    source_article,
+    max_depth = DEFAULT_MAX_DEPTH,
+    relevance_filter,
+  } = input;
 
   // Get source article's depth (0 if root/new)
   const sourceDepth = getArticleDepth(source_article);
@@ -234,7 +247,7 @@ async function discoverConcepts(input: DiscoverInput): Promise<DiscoverResult> {
       suggestedTitle,
       newConceptDepth,
       source_article,
-      priority
+      priority,
     );
 
     if (queued) {
@@ -284,7 +297,8 @@ export const tool: ToolModule = {
       properties: {
         source_article: {
           type: "string",
-          description: "Filename of the article to scan (e.g., 'semantic-drift.html')",
+          description:
+            "Filename of the article to scan (e.g., 'semantic-drift.html')",
         },
         max_depth: {
           type: "number",
@@ -297,16 +311,19 @@ export const tool: ToolModule = {
             required_keywords: {
               type: "array",
               items: { type: "string" },
-              description: "Keywords that must appear in the link filename (OR logic). Use to stay on topic.",
+              description:
+                "Keywords that must appear in the link filename (OR logic). Use to stay on topic.",
             },
             excluded_keywords: {
               type: "array",
               items: { type: "string" },
-              description: "Keywords that exclude a link from queuing. Use to avoid unwanted topics.",
+              description:
+                "Keywords that exclude a link from queuing. Use to avoid unwanted topics.",
             },
             min_filename_length: {
               type: "number",
-              description: "Minimum filename length to queue. Filters out very short/generic names.",
+              description:
+                "Minimum filename length to queue. Filters out very short/generic names.",
             },
           },
         },
@@ -339,13 +356,17 @@ export const tool: ToolModule = {
         }
 
         lines.push(``);
-        lines.push(`_To scan an article for new concepts, provide a source_article parameter._`);
+        lines.push(
+          `_To scan an article for new concepts, provide a source_article parameter._`,
+        );
 
         return {
-          content: [{
-            type: "text",
-            text: lines.join("\n"),
-          }],
+          content: [
+            {
+              type: "text",
+              text: lines.join("\n"),
+            },
+          ],
         };
       }
 
@@ -369,7 +390,9 @@ export const tool: ToolModule = {
           const status = concept.queued
             ? `QUEUED (depth ${concept.depth})`
             : `SKIPPED: ${concept.reason}`;
-          lines.push(`- **${concept.suggestedTitle}** (${concept.filename}) - ${status}`);
+          lines.push(
+            `- **${concept.suggestedTitle}** (${concept.filename}) - ${status}`,
+          );
         }
         lines.push(``);
       }
@@ -381,23 +404,29 @@ export const tool: ToolModule = {
 
       if (Object.keys(result.queueStats.byDepth).length > 0) {
         lines.push(`- By Depth:`);
-        for (const [depth, count] of Object.entries(result.queueStats.byDepth)) {
+        for (const [depth, count] of Object.entries(
+          result.queueStats.byDepth,
+        )) {
           lines.push(`  - Depth ${depth}: ${count} pending`);
         }
       }
 
       return {
-        content: [{
-          type: "text",
-          text: lines.join("\n"),
-        }],
+        content: [
+          {
+            type: "text",
+            text: lines.join("\n"),
+          },
+        ],
       };
     } catch (error) {
       return {
-        content: [{
-          type: "text",
-          text: `Error during discovery: ${error instanceof Error ? error.message : String(error)}`,
-        }],
+        content: [
+          {
+            type: "text",
+            text: `Error during discovery: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
         isError: true,
       };
     }

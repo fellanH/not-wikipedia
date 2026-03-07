@@ -79,6 +79,14 @@ export const CATEGORIES_DIR = path.join(CONTENT_REPO_DIR, "categories");
  * Infobox color palette.
  */
 export const INFOBOX_COLORS = [
-  "#7b9e89", "#c9a86c", "#8b7355", "#d4a87a", "#a6c4d4",
-  "#b8a8d4", "#98d1a8", "#e6c88a", "#9fc5e8", "#f9cb9c"
+  "#7b9e89",
+  "#c9a86c",
+  "#8b7355",
+  "#d4a87a",
+  "#a6c4d4",
+  "#b8a8d4",
+  "#98d1a8",
+  "#e6c88a",
+  "#9fc5e8",
+  "#f9cb9c",
 ];

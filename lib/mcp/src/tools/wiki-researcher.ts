@@ -58,7 +58,7 @@ function toApiResearcher(dbResearcher: DbResearcher): Researcher {
     nationality: dbResearcher.nationality || "",
     active_years: dbResearcher.active_years || "",
     key_contributions: contributions,
-    articles_mentioned: articles.map(f => f.replace(".html", "")),
+    articles_mentioned: articles.map((f) => f.replace(".html", "")),
     usage_count: dbResearcher.usage_count,
     status: dbResearcher.status,
   };
@@ -76,7 +76,8 @@ function selectResearcher(preferNew: boolean = false): ResearcherSelection {
     return {
       researcher: null,
       source: "suggested_new",
-      suggestion: "Consider creating a new researcher for diversity. Look at existing researchers to avoid duplication.",
+      suggestion:
+        "Consider creating a new researcher for diversity. Look at existing researchers to avoid duplication.",
       randomSeed,
     };
   }
@@ -117,17 +118,20 @@ function selectResearcher(preferNew: boolean = false): ResearcherSelection {
 export const tool: ToolModule = {
   definition: {
     name: "wiki_researcher_pick",
-    description: "OPTIONAL: Browse existing researchers for reference or consistency checking. The agent can create new researchers organically - use this only to avoid duplicating names or to reference established Not-Wikipedia researchers.",
+    description:
+      "OPTIONAL: Browse existing researchers for reference or consistency checking. The agent can create new researchers organically - use this only to avoid duplicating names or to reference established Not-Wikipedia researchers.",
     inputSchema: {
       type: "object",
       properties: {
         prefer_new: {
           type: "boolean",
-          description: "If true, prefer suggesting a new researcher over existing ones",
+          description:
+            "If true, prefer suggesting a new researcher over existing ones",
         },
         field: {
           type: "string",
-          description: "Optional: filter by field (e.g., 'linguistics', 'consciousness')",
+          description:
+            "Optional: filter by field (e.g., 'linguistics', 'consciousness')",
         },
       },
       required: [],
@@ -135,14 +139,16 @@ export const tool: ToolModule = {
   },
 
   handler: async (args) => {
-    const preferNew = args.prefer_new as boolean || false;
+    const preferNew = (args.prefer_new as boolean) || false;
     const selection = selectResearcher(preferNew);
 
     return {
-      content: [{
-        type: "text",
-        text: JSON.stringify(selection, null, 2),
-      }],
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(selection, null, 2),
+        },
+      ],
     };
   },
 };

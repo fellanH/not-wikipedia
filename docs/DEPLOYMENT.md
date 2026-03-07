@@ -4,20 +4,20 @@
 
 ## Current State
 
-| Component | Status |
-|-----------|--------|
-| Runtime | Local bash script (`lib/agent/ralph.sh`) |
-| Static Hosting | **Vercel** (auto-deploy on push) |
-| Content Repo | **GitHub** (`fellanH/wiki-content`) - source of truth |
-| Process Management | Coordinator + worker locks |
-| Dependencies | Node.js 20+, Claude Code CLI, Vercel CLI |
+| Component          | Status                                                |
+| ------------------ | ----------------------------------------------------- |
+| Runtime            | Local bash script (`lib/agent/ralph.sh`)              |
+| Static Hosting     | **Vercel** (auto-deploy on push)                      |
+| Content Repo       | **GitHub** (`fellanH/wiki-content`) - source of truth |
+| Process Management | Coordinator + worker locks                            |
+| Dependencies       | Node.js 20+, Claude Code CLI, Vercel CLI              |
 
 ## Production URLs
 
-| Resource | URL |
-|----------|-----|
-| Live Site | `not-wikipedia.org` |
-| GitHub Repo | `github.com/fellanH/wiki-content` |
+| Resource         | URL                                                  |
+| ---------------- | ---------------------------------------------------- |
+| Live Site        | `not-wikipedia.org`                                  |
+| GitHub Repo      | `github.com/fellanH/wiki-content`                    |
 | Vercel Dashboard | `vercel.com/felix-hellstroms-projects/not-wikipedia` |
 
 ---
@@ -70,12 +70,12 @@ The wiki-content repository is the **source of truth** for all content:
 
 ### Key Files
 
-| File | Purpose |
-|------|---------|
-| `lib/mcp/src/tools/wiki-git-publish.ts` | MCP tool for git commit/push |
-| `lib/mcp/src/config.ts` | Path configuration (WIKI_DIR, CONTENT_REPO_DIR) |
-| `lib/agent/ralph.sh` | Agent orchestration |
-| `../wiki-content/vercel.json` | Vercel configuration |
+| File                                    | Purpose                                         |
+| --------------------------------------- | ----------------------------------------------- |
+| `lib/mcp/src/tools/wiki-git-publish.ts` | MCP tool for git commit/push                    |
+| `lib/mcp/src/config.ts`                 | Path configuration (WIKI_DIR, CONTENT_REPO_DIR) |
+| `lib/agent/ralph.sh`                    | Agent orchestration                             |
+| `../wiki-content/vercel.json`           | Vercel configuration                            |
 
 ---
 
@@ -148,6 +148,7 @@ cd ../wiki-content && git add -A && git commit -m "Manual sync" && git push
 ### Vercel Deployment Protection (401 errors)
 
 If the site returns 401 Unauthorized:
+
 1. Go to Vercel Dashboard → Project Settings
 2. Scroll to "Deployment Protection"
 3. Set to "Disabled" for public access
@@ -165,8 +166,8 @@ cd lib/mcp && npm run build
 
 The content repository is the source of truth:
 
-| Resource | Location |
-|----------|----------|
-| Local Path | `../wiki-content/` |
-| GitHub | `github.com/fellanH/wiki-content` |
-| Vercel | `vercel.com/felix-hellstroms-projects/not-wikipedia` |
+| Resource   | Location                                             |
+| ---------- | ---------------------------------------------------- |
+| Local Path | `../wiki-content/`                                   |
+| GitHub     | `github.com/fellanH/wiki-content`                    |
+| Vercel     | `vercel.com/felix-hellstroms-projects/not-wikipedia` |

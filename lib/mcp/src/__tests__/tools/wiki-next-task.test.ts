@@ -76,22 +76,27 @@ describe("wiki-next-task", () => {
 
       // Mock fetch for live 404 crawl - simulate finding a 404
       let fetchCallCount = 0;
-      global.fetch = vi.fn().mockImplementation(async (url: string, options?: RequestInit) => {
-        fetchCallCount++;
-        if (url === "https://not-wikipedia.org/") {
-          return {
-            ok: true,
-            text: async () => '<a href="./wiki/missing-page.html">Link</a>',
-          };
-        }
-        if (options?.method === "HEAD") {
-          // Simulate 404 for missing-page.html
-          return { status: 404, ok: false };
-        }
-        return { ok: false };
-      }) as Mock;
+      global.fetch = vi
+        .fn()
+        .mockImplementation(async (url: string, options?: RequestInit) => {
+          fetchCallCount++;
+          if (url === "https://not-wikipedia.org/") {
+            return {
+              ok: true,
+              text: async () => '<a href="./wiki/missing-page.html">Link</a>',
+            };
+          }
+          if (options?.method === "HEAD") {
+            // Simulate 404 for missing-page.html
+            return { status: 404, ok: false };
+          }
+          return { ok: false };
+        }) as Mock;
 
-      const result = await tool.handler({ use_live_crawl: true, max_crawl_pages: 5 });
+      const result = await tool.handler({
+        use_live_crawl: true,
+        max_crawl_pages: 5,
+      });
       const task = JSON.parse(result.content[0].text);
 
       expect(task.taskType).toBe("create_from_live_404");
@@ -101,12 +106,17 @@ describe("wiki-next-task", () => {
     it("prioritizes broken links over placeholders", async () => {
       // Setup: broken links and placeholders exist
       (db.getAvailableBrokenLinks as Mock).mockReturnValue([
-        { target: "missing-article.html", sources: ["source1.html", "source2.html"] },
+        {
+          target: "missing-article.html",
+          sources: ["source1.html", "source2.html"],
+        },
       ]);
 
       // Mock files with placeholders
       (fs.readdir as Mock).mockResolvedValue(["placeholder-article.html"]);
-      (fs.readFile as Mock).mockResolvedValue("content with NEXT_PAGE_PLACEHOLDER marker");
+      (fs.readFile as Mock).mockResolvedValue(
+        "content with NEXT_PAGE_PLACEHOLDER marker",
+      );
 
       const result = await tool.handler({});
       const task = JSON.parse(result.content[0].text);
@@ -119,11 +129,15 @@ describe("wiki-next-task", () => {
     it("prioritizes placeholders over orphans", async () => {
       // Setup: no broken links, but placeholders and orphans exist
       (db.getAvailableBrokenLinks as Mock).mockReturnValue([]);
-      (db.getAvailableOrphanArticles as Mock).mockReturnValue(["orphan-article.html"]);
+      (db.getAvailableOrphanArticles as Mock).mockReturnValue([
+        "orphan-article.html",
+      ]);
 
       // Mock files with placeholders
       (fs.readdir as Mock).mockResolvedValue(["has-placeholder.html"]);
-      (fs.readFile as Mock).mockResolvedValue("content with NEXT_PAGE_PLACEHOLDER here");
+      (fs.readFile as Mock).mockResolvedValue(
+        "content with NEXT_PAGE_PLACEHOLDER here",
+      );
 
       const result = await tool.handler({});
       const task = JSON.parse(result.content[0].text);
@@ -136,7 +150,9 @@ describe("wiki-next-task", () => {
     it("prioritizes orphans over new content", async () => {
       // Setup: only orphans exist
       (db.getAvailableBrokenLinks as Mock).mockReturnValue([]);
-      (db.getAvailableOrphanArticles as Mock).mockReturnValue(["lonely-article.html"]);
+      (db.getAvailableOrphanArticles as Mock).mockReturnValue([
+        "lonely-article.html",
+      ]);
 
       // Mock no placeholders
       (fs.readdir as Mock).mockResolvedValue(["lonely-article.html"]);
@@ -177,7 +193,11 @@ describe("wiki-next-task", () => {
         { target: "a.html", sources: ["b.html"] },
         { target: "c.html", sources: ["d.html"] },
       ]);
-      (db.getOrphanArticles as Mock).mockReturnValue(["x.html", "y.html", "z.html"]);
+      (db.getOrphanArticles as Mock).mockReturnValue([
+        "x.html",
+        "y.html",
+        "z.html",
+      ]);
 
       (fs.readdir as Mock).mockResolvedValue(["p1.html", "p2.html"]);
       (fs.readFile as Mock).mockImplementation(async (path: string) => {
@@ -218,7 +238,9 @@ describe("wiki-next-task", () => {
       const task = JSON.parse(result.content[0].text);
 
       expect(task.humanSeed.type).toBe("quote");
-      expect(task.humanSeed.text).toBe("The only way to do great work is to love what you do.");
+      expect(task.humanSeed.text).toBe(
+        "The only way to do great work is to love what you do.",
+      );
       expect(task.humanSeed.source).toBe("Steve Jobs");
     });
 
@@ -282,7 +304,9 @@ describe("wiki-next-task", () => {
         { target: "missing.html", sources: ["source.html"] },
       ]);
 
-      global.fetch = vi.fn().mockRejectedValue(new Error("Should not be called"));
+      global.fetch = vi
+        .fn()
+        .mockRejectedValue(new Error("Should not be called"));
 
       const result = await tool.handler({});
       const task = JSON.parse(result.content[0].text);
@@ -303,7 +327,7 @@ describe("wiki-next-task", () => {
       expect(db.claimTask).toHaveBeenCalledWith(
         "repair_broken_link",
         "to-claim.html",
-        expect.stringMatching(/^worker-/)
+        expect.stringMatching(/^worker-/),
       );
     });
 
@@ -347,7 +371,9 @@ describe("wiki-next-task", () => {
 
       expect(task.taskType).toBe("repair_broken_link");
       // Should have attempted claims on multiple items
-      expect((db.claimTask as Mock).mock.calls.length).toBeGreaterThanOrEqual(2);
+      expect((db.claimTask as Mock).mock.calls.length).toBeGreaterThanOrEqual(
+        2,
+      );
     });
 
     it("falls through to next priority when all items are claimed", async () => {
@@ -388,7 +414,9 @@ describe("wiki-next-task", () => {
     it("excludes claimed filenames from placeholder selection", async () => {
       // Setup: one placeholder file, but it's already claimed
       (db.getAvailableBrokenLinks as Mock).mockReturnValue([]);
-      (db.getClaimedTaskFilenames as Mock).mockReturnValue(["placeholder.html"]);
+      (db.getClaimedTaskFilenames as Mock).mockReturnValue([
+        "placeholder.html",
+      ]);
       (db.getAvailableOrphanArticles as Mock).mockReturnValue([]);
 
       (fs.readdir as Mock).mockResolvedValue(["placeholder.html"]);
@@ -416,7 +444,7 @@ describe("wiki-next-task", () => {
       expect(db.claimTask).toHaveBeenCalledWith(
         "create_new",
         expect.stringMatching(/^new-content-[a-f0-9]+\.html$/),
-        expect.stringMatching(/^worker-/)
+        expect.stringMatching(/^worker-/),
       );
     });
   });
@@ -424,13 +452,16 @@ describe("wiki-next-task", () => {
   describe("infobox color selection", () => {
     it("selects from available colors not yet used", async () => {
       (db.getAvailableBrokenLinks as Mock).mockReturnValue([]);
-      (fs.readdir as Mock).mockResolvedValue(["article1.html", "article2.html"]);
+      (fs.readdir as Mock).mockResolvedValue([
+        "article1.html",
+        "article2.html",
+      ]);
       (fs.readFile as Mock).mockImplementation(async (path: string) => {
         if (path.includes("article1")) {
-          return 'background-color: #7b9e89;';
+          return "background-color: #7b9e89;";
         }
         if (path.includes("article2")) {
-          return 'background-color: #c9a86c;';
+          return "background-color: #c9a86c;";
         }
         return "";
       });
@@ -449,8 +480,12 @@ describe("wiki-next-task", () => {
     it("returns valid tool definition", () => {
       expect(tool.definition.name).toBe("wiki_next_task");
       expect(tool.definition.inputSchema.type).toBe("object");
-      expect(tool.definition.inputSchema.properties).toHaveProperty("use_live_crawl");
-      expect(tool.definition.inputSchema.properties).toHaveProperty("max_crawl_pages");
+      expect(tool.definition.inputSchema.properties).toHaveProperty(
+        "use_live_crawl",
+      );
+      expect(tool.definition.inputSchema.properties).toHaveProperty(
+        "max_crawl_pages",
+      );
     });
 
     it("handler returns properly formatted MCP response", async () => {

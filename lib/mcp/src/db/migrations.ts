@@ -27,14 +27,17 @@ const RESEARCHERS_FILE = path.join(META_DIR, "researchers.json");
 interface EcosystemJson {
   _meta: Record<string, unknown>;
   stats: Record<string, number>;
-  articles: Record<string, {
-    title: string;
-    type: string;
-    category: string;
-    outlinks: number;
-    inlinks: number;
-    created: string;
-  }>;
+  articles: Record<
+    string,
+    {
+      title: string;
+      type: string;
+      category: string;
+      outlinks: number;
+      inlinks: number;
+      created: string;
+    }
+  >;
   categories?: Record<string, { article_count: number }>;
 }
 
@@ -53,20 +56,28 @@ interface ResearcherJson {
 interface ResearchersFileJson {
   _meta: Record<string, unknown>;
   researchers: Record<string, ResearcherJson>;
-  institutions?: Record<string, {
-    name: string;
-    location: string;
-    founded: string;
-    focus: string;
-    key_researchers?: string[];
-  }>;
+  institutions?: Record<
+    string,
+    {
+      name: string;
+      location: string;
+      founded: string;
+      focus: string;
+      key_researchers?: string[];
+    }
+  >;
   suggested_new_researchers?: unknown[];
 }
 
 /**
  * Run the migration from JSON to SQLite.
  */
-export function runMigration(): { articles: number; researchers: number; links: number; institutions: number } {
+export function runMigration(): {
+  articles: number;
+  researchers: number;
+  links: number;
+  institutions: number;
+} {
   const db = getDatabase();
   const stats = { articles: 0, researchers: 0, links: 0, institutions: 0 };
 
@@ -84,10 +95,16 @@ export function runMigration(): { articles: number; researchers: number; links: 
 
     // 1. Migrate articles from ecosystem.json
     if (fs.existsSync(ECOSYSTEM_FILE)) {
-      const ecosystemData: EcosystemJson = JSON.parse(fs.readFileSync(ECOSYSTEM_FILE, "utf-8"));
+      const ecosystemData: EcosystemJson = JSON.parse(
+        fs.readFileSync(ECOSYSTEM_FILE, "utf-8"),
+      );
 
-      for (const [filename, article] of Object.entries(ecosystemData.articles)) {
-        const fullFilename = filename.endsWith(".html") ? filename : `${filename}.html`;
+      for (const [filename, article] of Object.entries(
+        ecosystemData.articles,
+      )) {
+        const fullFilename = filename.endsWith(".html")
+          ? filename
+          : `${filename}.html`;
         insertArticle({
           filename: fullFilename,
           title: article.title,
@@ -105,11 +122,15 @@ export function runMigration(): { articles: number; researchers: number; links: 
     const researcherIdMap: Map<string, number> = new Map();
 
     if (fs.existsSync(RESEARCHERS_FILE)) {
-      const researchersData: ResearchersFileJson = JSON.parse(fs.readFileSync(RESEARCHERS_FILE, "utf-8"));
+      const researchersData: ResearchersFileJson = JSON.parse(
+        fs.readFileSync(RESEARCHERS_FILE, "utf-8"),
+      );
 
       // Migrate institutions first
       if (researchersData.institutions) {
-        for (const [key, inst] of Object.entries(researchersData.institutions)) {
+        for (const [key, inst] of Object.entries(
+          researchersData.institutions,
+        )) {
           insertInstitution({
             name: inst.name,
             location: inst.location || null,
@@ -148,7 +169,9 @@ export function runMigration(): { articles: number; researchers: number; links: 
         // Link articles_mentioned to article_researchers
         if (researcher.articles_mentioned) {
           for (const articleFilename of researcher.articles_mentioned) {
-            const fullFilename = articleFilename.endsWith(".html") ? articleFilename : `${articleFilename}.html`;
+            const fullFilename = articleFilename.endsWith(".html")
+              ? articleFilename
+              : `${articleFilename}.html`;
             const article = getArticleByFilename(fullFilename);
             if (article) {
               linkArticleResearcher(article.id, researcherId);
@@ -158,7 +181,9 @@ export function runMigration(): { articles: number; researchers: number; links: 
       };
 
       // Migrate researchers from main researchers object
-      for (const [key, researcher] of Object.entries(researchersData.researchers)) {
+      for (const [key, researcher] of Object.entries(
+        researchersData.researchers,
+      )) {
         migrateResearcher(key, researcher);
       }
 
@@ -166,16 +191,29 @@ export function runMigration(): { articles: number; researchers: number; links: 
       const rawData = researchersData as unknown as Record<string, unknown>;
       const newResearchersAdded = rawData.new_researchers_added;
       if (newResearchersAdded && typeof newResearchersAdded === "object") {
-        for (const [key, researcher] of Object.entries(newResearchersAdded as Record<string, ResearcherJson>)) {
+        for (const [key, researcher] of Object.entries(
+          newResearchersAdded as Record<string, ResearcherJson>,
+        )) {
           migrateResearcher(key, researcher);
         }
       }
 
       // Migrate researchers at root level (check for researcher-like objects)
-      const reservedKeys = ["_meta", "researchers", "institutions", "suggested_new_researchers", "new_researchers_added"];
+      const reservedKeys = [
+        "_meta",
+        "researchers",
+        "institutions",
+        "suggested_new_researchers",
+        "new_researchers_added",
+      ];
       for (const [key, value] of Object.entries(rawData)) {
         if (reservedKeys.includes(key)) continue;
-        if (value && typeof value === "object" && "name" in value && "field" in value) {
+        if (
+          value &&
+          typeof value === "object" &&
+          "name" in value &&
+          "field" in value
+        ) {
           migrateResearcher(key, value as ResearcherJson);
         }
       }
@@ -183,7 +221,9 @@ export function runMigration(): { articles: number; researchers: number; links: 
 
     // 3. Scan HTML files to populate links table
     if (fs.existsSync(WIKI_DIR)) {
-      const htmlFiles = fs.readdirSync(WIKI_DIR).filter(f => f.endsWith(".html"));
+      const htmlFiles = fs
+        .readdirSync(WIKI_DIR)
+        .filter((f) => f.endsWith(".html"));
 
       for (const file of htmlFiles) {
         const article = getArticleByFilename(file);
@@ -217,7 +257,9 @@ export function runMigration(): { articles: number; researchers: number; links: 
 export function needsMigration(): boolean {
   try {
     const db = getDatabase();
-    const row = db.prepare("SELECT COUNT(*) as count FROM articles").get() as { count: number };
+    const row = db.prepare("SELECT COUNT(*) as count FROM articles").get() as {
+      count: number;
+    };
     return row.count === 0;
   } catch {
     return true;

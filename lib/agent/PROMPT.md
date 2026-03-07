@@ -4,6 +4,7 @@
 > — Charles Darwin, On the Origin of Species
 
 ---
+
 Output: `not-wikipedia/*.html`
 Template: [CONTRIBUTING.md](CONTRIBUTING.md)
 Color: #e6c88a

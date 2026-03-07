@@ -4,13 +4,13 @@
 
 ## Current State Assessment
 
-| Metric | Current | Bottleneck |
-|--------|---------|------------|
-| Articles | ~107 | O(n) file reads per scan |
-| Internal Links | ~900 | O(n×m) link validation |
-| Storage | Flat files | `wiki-content/wiki/*.html` |
-| Database | **SQLite (active)** | `lib/meta/ralph.db` |
-| Deployment | Auto | wiki-content → GitHub → Vercel |
+| Metric         | Current             | Bottleneck                     |
+| -------------- | ------------------- | ------------------------------ |
+| Articles       | ~107                | O(n) file reads per scan       |
+| Internal Links | ~900                | O(n×m) link validation         |
+| Storage        | Flat files          | `wiki-content/wiki/*.html`     |
+| Database       | **SQLite (active)** | `lib/meta/ralph.db`            |
+| Deployment     | Auto                | wiki-content → GitHub → Vercel |
 
 **Note:** SQLite database is now active and used for task prioritization, link tracking, and discovery queue.
 
@@ -30,16 +30,17 @@ The SQLite database (`lib/meta/ralph.db`) is now active and used by all MCP tool
 
 ### MCP Tools Using Database
 
-| Tool | Database Usage |
-|------|----------------|
-| `wiki-next-task.ts` | Queries priority tasks from discovery_queue |
+| Tool                   | Database Usage                                     |
+| ---------------------- | -------------------------------------------------- |
+| `wiki-next-task.ts`    | Queries priority tasks from discovery_queue        |
 | `wiki-broken-links.ts` | `SELECT * FROM links WHERE target NOT IN articles` |
-| `wiki-discover.ts` | Inserts discovered concepts into queue |
-| `wiki-git-publish.ts` | Commits changes to wiki-content repo |
+| `wiki-discover.ts`     | Inserts discovered concepts into queue             |
+| `wiki-git-publish.ts`  | Commits changes to wiki-content repo               |
 
 ### 1.3 Replace O(n²) Orphan Detection
 
 **Before (ralph.sh:260-269):**
+
 ```bash
 for f in "$WIKI_DIR"/*.html; do
   incoming=$(grep -l "href=\"$basename_f\"" "$WIKI_DIR"/*.html | wc -l)
@@ -47,6 +48,7 @@ done
 ```
 
 **After (SQL query):**
+
 ```sql
 SELECT a.slug FROM articles a
 LEFT JOIN links l ON l.target = a.slug
@@ -86,17 +88,17 @@ async function onArticleWritten(filePath: string) {
 ```typescript
 // .mcp/src/cache/link-graph.ts
 interface LinkGraphCache {
-  articles: Set<string>;           // O(1) existence check
-  outgoingLinks: Map<string, string[]>;  // source → targets
-  incomingLinks: Map<string, string[]>;  // target → sources (for orphan detection)
+  articles: Set<string>; // O(1) existence check
+  outgoingLinks: Map<string, string[]>; // source → targets
+  incomingLinks: Map<string, string[]>; // target → sources (for orphan detection)
   lastUpdated: Date;
 }
 
 let cache: LinkGraphCache | null = null;
 
 export function getOrBuildCache(): LinkGraphCache {
-  if (cache && (Date.now() - cache.lastUpdated.getTime()) < 60000) {
-    return cache;  // Return cached if < 1 minute old
+  if (cache && Date.now() - cache.lastUpdated.getTime() < 60000) {
+    return cache; // Return cached if < 1 minute old
   }
   return rebuildCache();
 }
@@ -106,13 +108,13 @@ export function getOrBuildCache(): LinkGraphCache {
 
 ```typescript
 // Watch for changes instead of polling
-import { watch } from 'chokidar';
+import { watch } from "chokidar";
 
-const watcher = watch('wiki-content/wiki/*.html', { persistent: true });
+const watcher = watch("wiki-content/wiki/*.html", { persistent: true });
 
-watcher.on('add', path => invalidateCacheFor(path));
-watcher.on('change', path => invalidateCacheFor(path));
-watcher.on('unlink', path => removeFromCache(path));
+watcher.on("add", (path) => invalidateCacheFor(path));
+watcher.on("change", (path) => invalidateCacheFor(path));
+watcher.on("unlink", (path) => removeFromCache(path));
 ```
 
 ### 2.3 Reduce Health Check Frequency
@@ -120,6 +122,7 @@ watcher.on('unlink', path => removeFromCache(path));
 **Before:** 2 full scans per loop (pre + post)
 
 **After:**
+
 ```bash
 # ralph.sh
 HEALTH_CHECK_INTERVAL=10  # Only run full health check every 10 loops
@@ -150,6 +153,7 @@ function getArticlePath(slug: string): string {
 ```
 
 **Benefits:**
+
 - Filesystem directory limits (~10K files/dir on some systems)
 - Parallel I/O across different directories
 - Better filesystem cache utilization
@@ -159,17 +163,20 @@ function getArticlePath(slug: string): string {
 ```typescript
 // scripts/migrate-to-sharded.ts
 async function migrateToSharded() {
-  const files = await glob('wiki-content/wiki/*.html');
+  const files = await glob("wiki-content/wiki/*.html");
 
   for (const file of files) {
-    const slug = path.basename(file, '.html');
+    const slug = path.basename(file, ".html");
     const newPath = getArticlePath(slug);
 
     await fs.mkdir(path.dirname(newPath), { recursive: true });
     await fs.rename(file, newPath);
 
     // Update all links in database
-    await db.run('UPDATE links SET source = ? WHERE source = ?', [newPath, file]);
+    await db.run("UPDATE links SET source = ? WHERE source = ?", [
+      newPath,
+      file,
+    ]);
   }
 }
 ```
@@ -285,11 +292,12 @@ User Request → CloudFlare/Fastly → Origin (ralph-server)
 ```
 
 **Cache invalidation on article update:**
+
 ```typescript
 async function onArticleUpdated(slug: string) {
   await fetch(`https://api.cloudflare.com/purge`, {
-    method: 'POST',
-    body: JSON.stringify({ files: [`https://not-wikipedia.com/${slug}.html`] })
+    method: "POST",
+    body: JSON.stringify({ files: [`https://not-wikipedia.com/${slug}.html`] }),
   });
 }
 ```
@@ -302,19 +310,21 @@ async function onArticleUpdated(slug: string) {
 
 ```typescript
 // Integrate with Elasticsearch or Meilisearch
-import { MeiliSearch } from 'meilisearch';
+import { MeiliSearch } from "meilisearch";
 
-const client = new MeiliSearch({ host: 'http://localhost:7700' });
-const index = client.index('articles');
+const client = new MeiliSearch({ host: "http://localhost:7700" });
+const index = client.index("articles");
 
 // On article creation
-await index.addDocuments([{
-  id: slug,
-  title: extractTitle(content),
-  body: extractPlainText(content),
-  categories: extractCategories(content),
-  researchers: extractResearchers(content)
-}]);
+await index.addDocuments([
+  {
+    id: slug,
+    title: extractTitle(content),
+    body: extractPlainText(content),
+    categories: extractCategories(content),
+    researchers: extractResearchers(content),
+  },
+]);
 ```
 
 ### 5.2 Category Index
@@ -343,17 +353,17 @@ LIMIT 5;  -- Underpopulated categories for new content
 
 ## Implementation Priority Matrix
 
-| Phase | Effort | Impact | Articles Supported |
-|-------|--------|--------|-------------------|
-| **1.1** Activate database | Low | High | 1K |
-| **1.3** SQL orphan detection | Low | Critical | 1K |
-| **1.4** Incremental updates | Medium | High | 1K |
-| **2.1** In-memory cache | Medium | High | 10K |
-| **2.3** Reduce health checks | Low | Medium | 10K |
-| **3.1** Sharded storage | Medium | Medium | 100K |
-| **3.3** Parallel tasks | High | High | 100K |
-| **4.1** Microservices | High | Critical | 1M+ |
-| **4.2** Message queue | Medium | High | 1M+ |
+| Phase                        | Effort | Impact   | Articles Supported |
+| ---------------------------- | ------ | -------- | ------------------ |
+| **1.1** Activate database    | Low    | High     | 1K                 |
+| **1.3** SQL orphan detection | Low    | Critical | 1K                 |
+| **1.4** Incremental updates  | Medium | High     | 1K                 |
+| **2.1** In-memory cache      | Medium | High     | 10K                |
+| **2.3** Reduce health checks | Low    | Medium   | 10K                |
+| **3.1** Sharded storage      | Medium | Medium   | 100K               |
+| **3.3** Parallel tasks       | High   | High     | 100K               |
+| **4.1** Microservices        | High   | Critical | 1M+                |
+| **4.2** Message queue        | Medium | High     | 1M+                |
 
 ---
 
@@ -449,6 +459,7 @@ fi
 ```
 
 **Scale triggers:**
+
 - Loop duration > 2 minutes → Implement Phase 1
 - Loop duration > 5 minutes → Implement Phase 2
 - Article count > 5K → Implement Phase 3

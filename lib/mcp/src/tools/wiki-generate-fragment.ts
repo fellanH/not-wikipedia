@@ -16,7 +16,9 @@ import { getArticleByFilename } from "../db/database.js";
  */
 function extractSummary(html: string): string {
   // Find first <p> with actual content (skip warning boxes)
-  const match = html.match(/<p>(?!<b>This article)<b>([^<]+)<\/b>([^<]*(?:<[^>]+>[^<]*)*?)<\/p>/);
+  const match = html.match(
+    /<p>(?!<b>This article)<b>([^<]+)<\/b>([^<]*(?:<[^>]+>[^<]*)*?)<\/p>/,
+  );
   if (match) {
     const text = (match[1] + match[2])
       .replace(/<[^>]+>/g, " ")
@@ -28,7 +30,10 @@ function extractSummary(html: string): string {
   // Fallback: any paragraph
   const fallback = html.match(/<p>([^<]+(?:<[^>]+>[^<]*)*?)<\/p>/);
   if (fallback) {
-    const text = fallback[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const text = fallback[1]
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     return text.length > 200 ? text.slice(0, 197) + "..." : text;
   }
 
@@ -41,9 +46,12 @@ function extractSummary(html: string): string {
 function extractKeywords(html: string, title: string): string[] {
   const keywords = new Set<string>();
 
-  title.toLowerCase().split(/\s+/).forEach(w => {
-    if (w.length > 3) keywords.add(w);
-  });
+  title
+    .toLowerCase()
+    .split(/\s+/)
+    .forEach((w) => {
+      if (w.length > 3) keywords.add(w);
+    });
 
   const boldMatches = html.matchAll(/<b>([^<]+)<\/b>/g);
   for (const match of boldMatches) {
@@ -65,7 +73,9 @@ function extractKeywords(html: string, title: string): string[] {
  */
 function extractInfoboxFields(html: string): Record<string, string> {
   const fields: Record<string, string> = {};
-  const rows = html.matchAll(/<tr>\s*<th[^>]*>([^<]+)<\/th>\s*<td>([^<]*(?:<[^>]+>[^<]*)*?)<\/td>\s*<\/tr>/g);
+  const rows = html.matchAll(
+    /<tr>\s*<th[^>]*>([^<]+)<\/th>\s*<td>([^<]*(?:<[^>]+>[^<]*)*?)<\/td>\s*<\/tr>/g,
+  );
 
   let count = 0;
   for (const match of rows) {
@@ -90,7 +100,7 @@ function generateFragment(
   title: string,
   type: string,
   summary: string,
-  infoboxFields: Record<string, string>
+  infoboxFields: Record<string, string>,
 ): string {
   const fieldsHtml = Object.entries(infoboxFields)
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
@@ -119,7 +129,7 @@ async function appendToSearchIndex(entry: {
 }): Promise<void> {
   const indexPath = path.join(API_DIR, "search-index.json");
 
-  let index: typeof entry[] = [];
+  let index: (typeof entry)[] = [];
   try {
     const existing = await fs.readFile(indexPath, "utf-8");
     index = JSON.parse(existing);
@@ -128,7 +138,7 @@ async function appendToSearchIndex(entry: {
   }
 
   // Remove existing entry if present (update case)
-  index = index.filter(e => e.filename !== entry.filename);
+  index = index.filter((e) => e.filename !== entry.filename);
   index.push(entry);
 
   await fs.writeFile(indexPath, JSON.stringify(index, null, 2), "utf-8");
@@ -137,21 +147,23 @@ async function appendToSearchIndex(entry: {
 export const tool: ToolModule = {
   definition: {
     name: "wiki_generate_fragment",
-    description: "Generate a preview fragment for a single article. Use after creating/editing an article for incremental index updates.",
+    description:
+      "Generate a preview fragment for a single article. Use after creating/editing an article for incremental index updates.",
     inputSchema: {
       type: "object",
       properties: {
         filename: {
           type: "string",
-          description: "Article filename (e.g., 'semantic-drift.html')"
+          description: "Article filename (e.g., 'semantic-drift.html')",
         },
         update_index: {
           type: "boolean",
-          description: "Also update search-index.json with this article (default: true)"
-        }
+          description:
+            "Also update search-index.json with this article (default: true)",
+        },
       },
-      required: ["filename"]
-    }
+      required: ["filename"],
+    },
   },
 
   handler: async (args) => {
@@ -161,8 +173,10 @@ export const tool: ToolModule = {
 
       if (!filename.endsWith(".html")) {
         return {
-          content: [{ type: "text", text: "Error: filename must end with .html" }],
-          isError: true
+          content: [
+            { type: "text", text: "Error: filename must end with .html" },
+          ],
+          isError: true,
         };
       }
 
@@ -170,8 +184,13 @@ export const tool: ToolModule = {
       const dbArticle = getArticleByFilename(filename);
       if (!dbArticle) {
         return {
-          content: [{ type: "text", text: `Error: Article '${filename}' not found in database` }],
-          isError: true
+          content: [
+            {
+              type: "text",
+              text: `Error: Article '${filename}' not found in database`,
+            },
+          ],
+          isError: true,
         };
       }
 
@@ -182,8 +201,13 @@ export const tool: ToolModule = {
         html = await fs.readFile(htmlPath, "utf-8");
       } catch {
         return {
-          content: [{ type: "text", text: `Error: Article file '${filename}' not found` }],
-          isError: true
+          content: [
+            {
+              type: "text",
+              text: `Error: Article file '${filename}' not found`,
+            },
+          ],
+          isError: true,
         };
       }
 
@@ -202,7 +226,7 @@ export const tool: ToolModule = {
         dbArticle.title,
         type,
         summary,
-        infoboxFields
+        infoboxFields,
       );
       const fragmentPath = path.join(FRAGMENTS_DIR, filename);
       await fs.writeFile(fragmentPath, fragment, "utf-8");
@@ -218,31 +242,39 @@ export const tool: ToolModule = {
           category: dbArticle.category || "uncategorized",
           keywords,
           inlinks: dbArticle.inlinks,
-          outlinks: dbArticle.outlinks
+          outlinks: dbArticle.outlinks,
         });
       }
 
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({
-            success: true,
-            filename,
-            fragment: `fragments/${filename}`,
-            indexUpdated: updateIndex,
-            summary: summary.slice(0, 50) + "...",
-            keywords: keywords.slice(0, 5)
-          }, null, 2)
-        }]
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                success: true,
+                filename,
+                fragment: `fragments/${filename}`,
+                indexUpdated: updateIndex,
+                summary: summary.slice(0, 50) + "...",
+                keywords: keywords.slice(0, 5),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
       };
     } catch (e) {
       return {
-        content: [{
-          type: "text",
-          text: `Error generating fragment: ${e instanceof Error ? e.message : e}`
-        }],
-        isError: true
+        content: [
+          {
+            type: "text",
+            text: `Error generating fragment: ${e instanceof Error ? e.message : e}`,
+          },
+        ],
+        isError: true,
       };
     }
-  }
+  },
 };

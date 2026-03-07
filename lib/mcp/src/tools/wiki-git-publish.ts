@@ -20,7 +20,7 @@ const execAsync = promisify(exec);
 
 interface PublishInput {
   commit_message?: string;
-  push?: boolean;  // Default: true (for auto-deploy via GitHub)
+  push?: boolean; // Default: true (for auto-deploy via GitHub)
 }
 
 interface PublishResult {
@@ -36,7 +36,9 @@ interface PublishResult {
 /**
  * Execute a git command in the content repo.
  */
-async function gitCommand(command: string): Promise<{ stdout: string; stderr: string }> {
+async function gitCommand(
+  command: string,
+): Promise<{ stdout: string; stderr: string }> {
   return execAsync(`git -C "${CONTENT_REPO_DIR}" ${command}`);
 }
 
@@ -56,7 +58,9 @@ async function validateContentRepo(): Promise<boolean> {
  * Push with retry and exponential backoff.
  * Returns { success, attempts } where attempts is the number of tries made.
  */
-async function pushWithRetry(maxAttempts = 3): Promise<{ success: boolean; attempts: number; error?: string }> {
+async function pushWithRetry(
+  maxAttempts = 3,
+): Promise<{ success: boolean; attempts: number; error?: string }> {
   let lastError: string | undefined;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -67,13 +71,17 @@ async function pushWithRetry(maxAttempts = 3): Promise<{ success: boolean; attem
       lastError = e instanceof Error ? e.message : String(e);
 
       if (attempt === maxAttempts) {
-        console.error(`Push failed after ${maxAttempts} attempts: ${lastError}`);
+        console.error(
+          `Push failed after ${maxAttempts} attempts: ${lastError}`,
+        );
         return { success: false, attempts: attempt, error: lastError };
       }
 
-      const delay = Math.pow(2, attempt) * 1000;  // 2s, 4s, 8s
-      console.log(`Push attempt ${attempt} failed, retrying in ${delay / 1000}s...`);
-      await new Promise(r => setTimeout(r, delay));
+      const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+      console.log(
+        `Push attempt ${attempt} failed, retrying in ${delay / 1000}s...`,
+      );
+      await new Promise((r) => setTimeout(r, delay));
     }
   }
 
@@ -171,11 +179,13 @@ export const tool: ToolModule = {
       properties: {
         commit_message: {
           type: "string",
-          description: "Custom commit message. If not provided, auto-generates based on changed files.",
+          description:
+            "Custom commit message. If not provided, auto-generates based on changed files.",
         },
         push: {
           type: "boolean",
-          description: "Push to remote after commit (default: true). Triggers Vercel auto-deploy via GitHub.",
+          description:
+            "Push to remote after commit (default: true). Triggers Vercel auto-deploy via GitHub.",
         },
       },
       required: [],
@@ -219,10 +229,12 @@ export const tool: ToolModule = {
     }
 
     return {
-      content: [{
-        type: "text",
-        text: lines.join("\n"),
-      }],
+      content: [
+        {
+          type: "text",
+          text: lines.join("\n"),
+        },
+      ],
       isError: !result.success,
     };
   },

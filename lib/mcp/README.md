@@ -52,12 +52,14 @@ npm run build
 Returns a complete task specification using cryptographically secure randomness.
 
 **Priority Order:**
+
 1. `repair_broken_link` (critical) - Fix missing pages
 2. `resolve_placeholder` (high) - Replace NEXT_PAGE_PLACEHOLDER
 3. `fix_orphan` (medium) - Add links to orphaned articles
 4. `create_new` (low) - Ecosystem healthy, expand content
 
 **Response:**
+
 ```json
 {
   "taskType": "repair_broken_link",
@@ -91,10 +93,12 @@ Returns a complete task specification using cryptographically secure randomness.
 Returns indexed list of all broken links, sorted by priority.
 
 **Parameters:**
+
 - `select_index` (number) - Return only the link at this index
 - `select_random` (boolean) - Return a randomly selected broken link
 
 **Response:**
+
 ```json
 {
   "count": 3,
@@ -117,6 +121,7 @@ Returns indexed list of all broken links, sorted by priority.
 Selects next topic using secure randomness.
 
 **Parameters:**
+
 - `force_random` (boolean) - Skip broken links/priorities, pure random
 
 **Priority:** broken links → expansion priorities → random suggestions
@@ -126,9 +131,11 @@ Selects next topic using secure randomness.
 Randomly selects an available researcher, avoiding overused ones.
 
 **Parameters:**
+
 - `prefer_new` (boolean) - Prefer suggesting a new researcher
 
 **Response:**
+
 ```json
 {
   "researcher": {
@@ -147,6 +154,7 @@ Randomly selects an available researcher, avoiding overused ones.
 Returns complete ecosystem health status.
 
 **Response:**
+
 ```json
 {
   "healthy": true,
@@ -229,6 +237,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
 ## Adding New Tools
 
 1. Create `src/tools/my-tool.ts`:
+
 ```typescript
 import { ToolModule } from "../types.js";
 
@@ -239,18 +248,19 @@ export const tool: ToolModule = {
     inputSchema: {
       type: "object",
       properties: {},
-      required: []
-    }
+      required: [],
+    },
   },
   handler: async (args) => {
     return {
-      content: [{ type: "text", text: JSON.stringify(result) }]
+      content: [{ type: "text", text: JSON.stringify(result) }],
     };
-  }
+  },
 };
 ```
 
 2. Register in `src/tools/index.ts`:
+
 ```typescript
 import { tool as wikiMyTool } from "./my-tool.js";
 // Add to toolModules array
@@ -262,13 +272,13 @@ import { tool as wikiMyTool } from "./my-tool.js";
 
 The tools interact with these files:
 
-| File | Purpose |
-|------|---------|
-| `../wiki-content/wiki/*.html` | Wiki articles (source of truth) |
-| `../wiki-content/styles.css` | Shared styles |
-| `../wiki-content/api/search-index.json` | Search index |
-| `../wiki-content/fragments/*.html` | Article preview fragments |
-| `lib/meta/ralph.db` | SQLite database (articles, links, queue) |
+| File                                    | Purpose                                  |
+| --------------------------------------- | ---------------------------------------- |
+| `../wiki-content/wiki/*.html`           | Wiki articles (source of truth)          |
+| `../wiki-content/styles.css`            | Shared styles                            |
+| `../wiki-content/api/search-index.json` | Search index                             |
+| `../wiki-content/fragments/*.html`      | Article preview fragments                |
+| `lib/meta/ralph.db`                     | SQLite database (articles, links, queue) |
 
 ## Self-Healing Loop
 

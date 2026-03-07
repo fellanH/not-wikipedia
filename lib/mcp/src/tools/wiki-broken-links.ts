@@ -48,7 +48,7 @@ function getBrokenLinksIndex(): BrokenLinksResult {
     const suggestedTitle = bl.target
       .replace(".html", "")
       .split("-")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
 
     // Priority based on number of sources
@@ -75,7 +75,7 @@ function getBrokenLinksIndex(): BrokenLinksResult {
   });
 
   // Re-index after sorting
-  links.forEach((link, i) => link.index = i);
+  links.forEach((link, i) => (link.index = i));
 
   return {
     count: links.length,
@@ -88,7 +88,8 @@ function getBrokenLinksIndex(): BrokenLinksResult {
 export const tool: ToolModule = {
   definition: {
     name: "wiki_broken_links",
-    description: "Get an indexed list of all broken links in the Not-Wikipedia ecosystem. Each link includes index, target page, source pages, and priority. Also provides a random selection index.",
+    description:
+      "Get an indexed list of all broken links in the Not-Wikipedia ecosystem. Each link includes index, target page, source pages, and priority. Also provides a random selection index.",
     inputSchema: {
       type: "object",
       properties: {
@@ -110,38 +111,56 @@ export const tool: ToolModule = {
     const selectIndex = args.select_index as number | undefined;
     const selectRandom = args.select_random as boolean;
 
-    if (selectIndex !== undefined && selectIndex >= 0 && selectIndex < result.links.length) {
+    if (
+      selectIndex !== undefined &&
+      selectIndex >= 0 &&
+      selectIndex < result.links.length
+    ) {
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({
-            selected: result.links[selectIndex],
-            totalBrokenLinks: result.count,
-            randomSeed: result.randomSeed,
-          }, null, 2),
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                selected: result.links[selectIndex],
+                totalBrokenLinks: result.count,
+                randomSeed: result.randomSeed,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
       };
     }
 
     if (selectRandom && result.randomSelection !== null) {
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({
-            selected: result.links[result.randomSelection],
-            selectedIndex: result.randomSelection,
-            totalBrokenLinks: result.count,
-            randomSeed: result.randomSeed,
-          }, null, 2),
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                selected: result.links[result.randomSelection],
+                selectedIndex: result.randomSelection,
+                totalBrokenLinks: result.count,
+                randomSeed: result.randomSeed,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
       };
     }
 
     return {
-      content: [{
-        type: "text",
-        text: JSON.stringify(result, null, 2),
-      }],
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
     };
   },
 };

@@ -14,7 +14,9 @@ import { Tool, CallToolResult } from "@modelcontextprotocol/sdk/types.js";
  * @param args - Key-value pairs passed by the client (validated against inputSchema)
  * @returns A result with content array and optional isError flag
  */
-export type ToolHandler = (args: Record<string, unknown>) => Promise<CallToolResult>;
+export type ToolHandler = (
+  args: Record<string, unknown>,
+) => Promise<CallToolResult>;
 
 /**
  * A complete tool module with its definition and implementation.

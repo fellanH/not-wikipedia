@@ -58,5 +58,5 @@ export const definitions: Tool[] = toolModules.map((t) => t.definition);
 // Build a handler map for CallToolRequest
 // Provides O(1) lookup when a tool is called by name
 export const handlers: Map<string, ToolHandler> = new Map(
-  toolModules.map((t) => [t.definition.name, t.handler])
+  toolModules.map((t) => [t.definition.name, t.handler]),
 );

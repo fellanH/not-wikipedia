@@ -82,7 +82,9 @@ function extractInternalLinks(html: string, baseUrl: string): string[] {
 /**
  * Fetch a URL and return status + content
  */
-async function fetchUrl(url: string): Promise<{ status: number; content: string }> {
+async function fetchUrl(
+  url: string,
+): Promise<{ status: number; content: string }> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
@@ -139,7 +141,7 @@ async function crawlSite(maxPages: number = 50): Promise<Crawl404Result> {
               const suggestedTitle = filename
                 .replace(".html", "")
                 .split("-")
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(" ");
 
               if (!brokenLinksMap.has(link)) {
@@ -167,7 +169,7 @@ async function crawlSite(maxPages: number = 50): Promise<Crawl404Result> {
     }
 
     // Small delay to avoid hammering the server
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
   const brokenLinks = Array.from(brokenLinksMap.values());
@@ -187,7 +189,8 @@ async function crawlSite(maxPages: number = 50): Promise<Crawl404Result> {
 export const tool: ToolModule = {
   definition: {
     name: "wiki_crawl_404s",
-    description: "Crawl the live not-wikipedia.org site to find pages that return 404 errors. Unlike wiki_broken_links (which checks the local database), this tool makes actual HTTP requests to the deployed site. Returns broken links with their source pages and suggested filenames.",
+    description:
+      "Crawl the live not-wikipedia.org site to find pages that return 404 errors. Unlike wiki_broken_links (which checks the local database), this tool makes actual HTTP requests to the deployed site. Returns broken links with their source pages and suggested filenames.",
     inputSchema: {
       type: "object",
       properties: {
@@ -197,7 +200,8 @@ export const tool: ToolModule = {
         },
         return_first: {
           type: "boolean",
-          description: "If true, return only the first (highest priority) broken link for immediate action",
+          description:
+            "If true, return only the first (highest priority) broken link for immediate action",
         },
       },
       required: [],
@@ -213,23 +217,31 @@ export const tool: ToolModule = {
     if (returnFirst && result.brokenLinks.length > 0) {
       const first = result.brokenLinks[0];
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({
-            action: "create_missing_page",
-            target: first,
-            totalBrokenLinks: result.brokenLinks.length,
-            timestamp: result.timestamp,
-          }, null, 2),
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                action: "create_missing_page",
+                target: first,
+                totalBrokenLinks: result.brokenLinks.length,
+                timestamp: result.timestamp,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
       };
     }
 
     return {
-      content: [{
-        type: "text",
-        text: JSON.stringify(result, null, 2),
-      }],
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
     };
   },
 };

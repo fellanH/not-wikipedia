@@ -63,11 +63,11 @@ describe("wiki-create-article", () => {
 
       // Check basic HTML structure
       expect(html).toContain("<!DOCTYPE html>");
-      expect(html).toContain("<html lang=\"en\">");
+      expect(html).toContain('<html lang="en">');
       expect(html).toContain("<head>");
       expect(html).toContain("<body>");
       expect(html).toContain("<title>Test Article - Wikipedia</title>");
-      expect(html).toContain("<h1 id=\"firstHeading\">Test Article</h1>");
+      expect(html).toContain('<h1 id="firstHeading">Test Article</h1>');
       expect(html).toContain("<p>This is the article content.</p>");
       expect(html).toContain("</body>");
       expect(html).toContain("</html>");
@@ -104,9 +104,11 @@ describe("wiki-create-article", () => {
       // Check infobox structure and color
       expect(html).toContain("background-color: #ff5733");
       expect(html).toContain('<table class="infobox">');
-      expect(html).toContain('<td colspan="2" class="infobox-title">Test Article</td>');
-      expect(html).toContain("<th scope=\"row\">Type</th><td>Example</td>");
-      expect(html).toContain("<th scope=\"row\">Status</th><td>Active</td>");
+      expect(html).toContain(
+        '<td colspan="2" class="infobox-title">Test Article</td>',
+      );
+      expect(html).toContain('<th scope="row">Type</th><td>Example</td>');
+      expect(html).toContain('<th scope="row">Status</th><td>Active</td>');
     });
 
     it("uses random color when infobox_color not provided", async () => {
@@ -132,19 +134,24 @@ describe("wiki-create-article", () => {
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
       const html = writeCall[1] as string;
 
-      expect(html).toContain('<a href="related-article.html">related article</a>');
+      expect(html).toContain(
+        '<a href="related-article.html">related article</a>',
+      );
     });
 
     it("renders section headings with correct IDs", async () => {
       await tool.handler({
         title: "Test Article",
-        content: "## History\n\nHistory content.\n\n### Early Period\n\nEarly period content.",
+        content:
+          "## History\n\nHistory content.\n\n### Early Period\n\nEarly period content.",
       });
 
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
       const html = writeCall[1] as string;
 
-      expect(html).toContain('<h2 id="History">History<span class="mw-editsection">');
+      expect(html).toContain(
+        '<h2 id="History">History<span class="mw-editsection">',
+      );
       expect(html).toContain('<h3 id="Early_Period">Early Period</h3>');
     });
 
@@ -191,7 +198,9 @@ describe("wiki-create-article", () => {
       const html = writeCall[1] as string;
 
       expect(html).toContain('<a href="related-topic.html">related topic</a>');
-      expect(html).toContain('<a href="another-article.html">another article</a>');
+      expect(html).toContain(
+        '<a href="another-article.html">another article</a>',
+      );
     });
 
     it("renders categories correctly", async () => {
@@ -222,7 +231,9 @@ describe("wiki-create-article", () => {
       const html = writeCall[1] as string;
 
       expect(html).toContain('<div class="ambox ambox-warning">');
-      expect(html).toContain("<strong>Warning:</strong> This article needs verification.");
+      expect(html).toContain(
+        "<strong>Warning:</strong> This article needs verification.",
+      );
     });
 
     it("handles empty see_also with placeholder", async () => {
@@ -270,7 +281,9 @@ describe("wiki-create-article", () => {
       const writeCall = (fs.writeFile as Mock).mock.calls[0];
       const filepath = writeCall[0] as string;
 
-      expect(filepath).toBe("/mock/wiki/test-article-with-special-characters.html");
+      expect(filepath).toBe(
+        "/mock/wiki/test-article-with-special-characters.html",
+      );
     });
   });
 
@@ -302,7 +315,7 @@ describe("wiki-create-article", () => {
       expect(db.insertArticle).toHaveBeenCalledWith(
         expect.objectContaining({
           outlinks: 2,
-        })
+        }),
       );
     });
 
@@ -316,7 +329,7 @@ describe("wiki-create-article", () => {
       expect(db.insertArticle).toHaveBeenCalledWith(
         expect.objectContaining({
           outlinks: 3, // 1 from content + 2 from see_also
-        })
+        }),
       );
     });
 
@@ -330,7 +343,7 @@ describe("wiki-create-article", () => {
       expect(db.insertArticle).toHaveBeenCalledWith(
         expect.objectContaining({
           category: "history",
-        })
+        }),
       );
     });
 
@@ -343,7 +356,7 @@ describe("wiki-create-article", () => {
       expect(db.insertArticle).toHaveBeenCalledWith(
         expect.objectContaining({
           category: "technology",
-        })
+        }),
       );
     });
 
@@ -360,11 +373,15 @@ describe("wiki-create-article", () => {
 
       // Should error with descriptive message
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("Article creation failed during DB registration");
+      expect(result.content[0].text).toContain(
+        "Article creation failed during DB registration",
+      );
       expect(result.content[0].text).toContain("UNIQUE constraint failed");
 
       // Should have attempted to rollback by deleting the file
-      expect(fs.unlink).toHaveBeenCalledWith("/mock/wiki/existing-article.html");
+      expect(fs.unlink).toHaveBeenCalledWith(
+        "/mock/wiki/existing-article.html",
+      );
     });
 
     it("completes task assignments for created article", async () => {
@@ -373,10 +390,22 @@ describe("wiki-create-article", () => {
         content: "Content.",
       });
 
-      expect(db.completeTask).toHaveBeenCalledWith("repair_broken_link", "test-article.html");
-      expect(db.completeTask).toHaveBeenCalledWith("create_from_live_404", "test-article.html");
-      expect(db.completeTask).toHaveBeenCalledWith("fix_orphan", "test-article.html");
-      expect(db.completeTask).toHaveBeenCalledWith("resolve_placeholder", "test-article.html");
+      expect(db.completeTask).toHaveBeenCalledWith(
+        "repair_broken_link",
+        "test-article.html",
+      );
+      expect(db.completeTask).toHaveBeenCalledWith(
+        "create_from_live_404",
+        "test-article.html",
+      );
+      expect(db.completeTask).toHaveBeenCalledWith(
+        "fix_orphan",
+        "test-article.html",
+      );
+      expect(db.completeTask).toHaveBeenCalledWith(
+        "resolve_placeholder",
+        "test-article.html",
+      );
     });
 
     it("handles task completion errors gracefully", async () => {

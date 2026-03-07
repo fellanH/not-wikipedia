@@ -35,7 +35,13 @@ interface HumanSeed {
 }
 
 interface TaskSpec {
-  taskType: "repair_broken_link" | "create_from_live_404" | "resolve_placeholder" | "fix_orphan" | "create_new" | "ecosystem_healthy";
+  taskType:
+    | "repair_broken_link"
+    | "create_from_live_404"
+    | "resolve_placeholder"
+    | "fix_orphan"
+    | "create_new"
+    | "ecosystem_healthy";
   priority: "critical" | "high" | "medium" | "low";
   topic: {
     name: string;
@@ -91,7 +97,9 @@ async function findLive404s(maxPages: number = 20): Promise<Live404Result[]> {
     visited.add(url);
 
     try {
-      const response = await fetch(url, { headers: { "User-Agent": "Not-Wikipedia-TaskSelector/1.0" } });
+      const response = await fetch(url, {
+        headers: { "User-Agent": "Not-Wikipedia-TaskSelector/1.0" },
+      });
 
       if (response.ok) {
         const html = await response.text();
@@ -108,7 +116,9 @@ async function findLive404s(maxPages: number = 20): Promise<Live404Result[]> {
           } else if (href.startsWith("./wiki/")) {
             fullUrl = `${BASE_URL}/${href.slice(2)}`;
           } else if (!href.includes("/") && href.endsWith(".html")) {
-            fullUrl = url.includes("/wiki/") ? `${BASE_URL}/wiki/${href}` : `${BASE_URL}/wiki/${href}`;
+            fullUrl = url.includes("/wiki/")
+              ? `${BASE_URL}/wiki/${href}`
+              : `${BASE_URL}/wiki/${href}`;
           } else {
             continue;
           }
@@ -118,23 +128,35 @@ async function findLive404s(maxPages: number = 20): Promise<Live404Result[]> {
               const headResp = await fetch(fullUrl, { method: "HEAD" });
               if (headResp.status === 404) {
                 const filename = fullUrl.split("/").pop() || "";
-                const suggestedTitle = filename.replace(".html", "").split("-")
-                  .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+                const suggestedTitle = filename
+                  .replace(".html", "")
+                  .split("-")
+                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                  .join(" ");
 
                 if (!broken.has(fullUrl)) {
-                  broken.set(fullUrl, { target: fullUrl, filename, suggestedTitle, sources: [url] });
+                  broken.set(fullUrl, {
+                    target: fullUrl,
+                    filename,
+                    suggestedTitle,
+                    sources: [url],
+                  });
                 } else {
                   broken.get(fullUrl)!.sources.push(url);
                 }
               } else if (headResp.ok) {
                 toVisit.push(fullUrl);
               }
-            } catch { /* skip */ }
+            } catch {
+              /* skip */
+            }
           }
         }
       }
-      await new Promise(r => setTimeout(r, 50)); // Small delay
-    } catch { /* skip */ }
+      await new Promise((r) => setTimeout(r, 50)); // Small delay
+    } catch {
+      /* skip */
+    }
   }
 
   const results = Array.from(broken.values());
@@ -144,26 +166,83 @@ async function findLive404s(maxPages: number = 20): Promise<Live404Result[]> {
 
 // Embedded fallback corpus for human seed inspiration
 const FALLBACK_CORPUS: Array<{ text: string; source: string }> = [
-  { text: "Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world.", source: "Herman Melville, Moby-Dick" },
-  { text: "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.", source: "Jane Austen, Pride and Prejudice" },
-  { text: "The fog comes on little cat feet. It sits looking over harbor and city on silent haunches and then moves on.", source: "Carl Sandburg, Fog" },
-  { text: "I have measured out my life with coffee spoons.", source: "T.S. Eliot, The Love Song of J. Alfred Prufrock" },
-  { text: "Whereof one cannot speak, thereof one must be silent.", source: "Ludwig Wittgenstein, Tractatus Logico-Philosophicus" },
-  { text: "He who has a why to live can bear almost any how.", source: "Friedrich Nietzsche, Twilight of the Idols" },
-  { text: "There is grandeur in this view of life, with its several powers, having been originally breathed into a few forms or into one.", source: "Charles Darwin, On the Origin of Species" },
-  { text: "The cosmos is within us. We are made of star-stuff. We are a way for the universe to know itself.", source: "Carl Sagan, Cosmos" },
-  { text: "I write entirely to find out what I'm thinking, what I'm looking at, what I see and what it means.", source: "Joan Didion, Why I Write" },
-  { text: "Time is the substance I am made of. Time is a river which sweeps me along, but I am the river.", source: "Jorge Luis Borges, A New Refutation of Time" },
-  { text: "The past is never dead. It's not even past.", source: "William Faulkner, Requiem for a Nun" },
-  { text: "Perhaps one did not want to be loved so much as to be understood.", source: "George Orwell, 1984" },
-  { text: "We are what we pretend to be, so we must be careful about what we pretend to be.", source: "Kurt Vonnegut, Mother Night" },
-  { text: "The mind is its own place, and in itself can make a heaven of hell, a hell of heaven.", source: "John Milton, Paradise Lost" },
-  { text: "Memory is the diary we all carry about with us.", source: "Oscar Wilde" },
-  { text: "Two roads diverged in a yellow wood, and sorry I could not travel both.", source: "Robert Frost, The Road Not Taken" },
+  {
+    text: "Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world.",
+    source: "Herman Melville, Moby-Dick",
+  },
+  {
+    text: "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
+    source: "Jane Austen, Pride and Prejudice",
+  },
+  {
+    text: "The fog comes on little cat feet. It sits looking over harbor and city on silent haunches and then moves on.",
+    source: "Carl Sandburg, Fog",
+  },
+  {
+    text: "I have measured out my life with coffee spoons.",
+    source: "T.S. Eliot, The Love Song of J. Alfred Prufrock",
+  },
+  {
+    text: "Whereof one cannot speak, thereof one must be silent.",
+    source: "Ludwig Wittgenstein, Tractatus Logico-Philosophicus",
+  },
+  {
+    text: "He who has a why to live can bear almost any how.",
+    source: "Friedrich Nietzsche, Twilight of the Idols",
+  },
+  {
+    text: "There is grandeur in this view of life, with its several powers, having been originally breathed into a few forms or into one.",
+    source: "Charles Darwin, On the Origin of Species",
+  },
+  {
+    text: "The cosmos is within us. We are made of star-stuff. We are a way for the universe to know itself.",
+    source: "Carl Sagan, Cosmos",
+  },
+  {
+    text: "I write entirely to find out what I'm thinking, what I'm looking at, what I see and what it means.",
+    source: "Joan Didion, Why I Write",
+  },
+  {
+    text: "Time is the substance I am made of. Time is a river which sweeps me along, but I am the river.",
+    source: "Jorge Luis Borges, A New Refutation of Time",
+  },
+  {
+    text: "The past is never dead. It's not even past.",
+    source: "William Faulkner, Requiem for a Nun",
+  },
+  {
+    text: "Perhaps one did not want to be loved so much as to be understood.",
+    source: "George Orwell, 1984",
+  },
+  {
+    text: "We are what we pretend to be, so we must be careful about what we pretend to be.",
+    source: "Kurt Vonnegut, Mother Night",
+  },
+  {
+    text: "The mind is its own place, and in itself can make a heaven of hell, a hell of heaven.",
+    source: "John Milton, Paradise Lost",
+  },
+  {
+    text: "Memory is the diary we all carry about with us.",
+    source: "Oscar Wilde",
+  },
+  {
+    text: "Two roads diverged in a yellow wood, and sorry I could not travel both.",
+    source: "Robert Frost, The Road Not Taken",
+  },
   { text: "One cannot step twice in the same river.", source: "Heraclitus" },
-  { text: "The world is too much with us; late and soon, getting and spending, we lay waste our powers.", source: "William Wordsworth, The World Is Too Much With Us" },
-  { text: "So we beat on, boats against the current, borne back ceaselessly into the past.", source: "F. Scott Fitzgerald, The Great Gatsby" },
-  { text: "I took a deep breath and listened to the old brag of my heart: I am, I am, I am.", source: "Sylvia Plath, The Bell Jar" },
+  {
+    text: "The world is too much with us; late and soon, getting and spending, we lay waste our powers.",
+    source: "William Wordsworth, The World Is Too Much With Us",
+  },
+  {
+    text: "So we beat on, boats against the current, borne back ceaselessly into the past.",
+    source: "F. Scott Fitzgerald, The Great Gatsby",
+  },
+  {
+    text: "I took a deep breath and listened to the old brag of my heart: I am, I am, I am.",
+    source: "Sylvia Plath, The Bell Jar",
+  },
 ];
 
 async function fetchHumanSeed(): Promise<HumanSeed> {
@@ -171,9 +250,12 @@ async function fetchHumanSeed(): Promise<HumanSeed> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch("https://api.quotable.io/random?minLength=50&maxLength=200", {
-      signal: controller.signal
-    });
+    const response = await fetch(
+      "https://api.quotable.io/random?minLength=50&maxLength=200",
+      {
+        signal: controller.signal,
+      },
+    );
     clearTimeout(timeout);
     if (response.ok) {
       const data = await response.json();
@@ -193,7 +275,10 @@ async function fetchHumanSeed(): Promise<HumanSeed> {
  * Get placeholders and used colors by scanning HTML files.
  * These are not stored in the database.
  */
-async function getFileBasedState(): Promise<{ placeholders: string[]; usedColors: string[] }> {
+async function getFileBasedState(): Promise<{
+  placeholders: string[];
+  usedColors: string[];
+}> {
   const state = {
     placeholders: [] as string[],
     usedColors: [] as string[],
@@ -201,14 +286,14 @@ async function getFileBasedState(): Promise<{ placeholders: string[]; usedColors
 
   try {
     const allFiles = await fs.readdir(WIKI_DIR);
-    const files = allFiles.filter(f => f.endsWith(".html"));
+    const files = allFiles.filter((f) => f.endsWith(".html"));
 
     // Read all files in parallel
     const fileContents = await Promise.all(
-      files.map(async file => ({
+      files.map(async (file) => ({
         file,
         content: await fs.readFile(path.join(WIKI_DIR, file), "utf-8"),
-      }))
+      })),
     );
 
     for (const { file, content } of fileContents) {
@@ -230,7 +315,9 @@ async function getFileBasedState(): Promise<{ placeholders: string[]; usedColors
   return state;
 }
 
-async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?: number } = {}): Promise<TaskSpec> {
+async function selectNextTask(
+  options: { useLiveCrawl?: boolean; maxCrawlPages?: number } = {},
+): Promise<TaskSpec> {
   const randomSeed = crypto.randomBytes(8).toString("hex");
   const workerId = `worker-${crypto.randomBytes(4).toString("hex")}`;
 
@@ -238,7 +325,9 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
   // 30 minute timeout - tasks older than this are considered abandoned
   const staleCleaned = cleanupStaleTasks(30);
   if (staleCleaned > 0) {
-    console.error(`[wiki_next_task] Cleaned up ${staleCleaned} stale task assignment(s)`);
+    console.error(
+      `[wiki_next_task] Cleaned up ${staleCleaned} stale task assignment(s)`,
+    );
   }
 
   // Get data from database (using available* functions that exclude claimed tasks)
@@ -253,18 +342,25 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
 
   // Filter placeholders to exclude claimed tasks
   const claimedFilenames = new Set(getClaimedTaskFilenames());
-  const availablePlaceholders = fileState.placeholders.filter(f => !claimedFilenames.has(f));
+  const availablePlaceholders = fileState.placeholders.filter(
+    (f) => !claimedFilenames.has(f),
+  );
 
   // Pick unused color for visual variety
-  const availableColors = INFOBOX_COLORS.filter(c => !fileState.usedColors.includes(c.toLowerCase()));
-  const infoboxColor = secureRandomElement(availableColors) || secureRandomElement(INFOBOX_COLORS) || "#b0c4de";
+  const availableColors = INFOBOX_COLORS.filter(
+    (c) => !fileState.usedColors.includes(c.toLowerCase()),
+  );
+  const infoboxColor =
+    secureRandomElement(availableColors) ||
+    secureRandomElement(INFOBOX_COLORS) ||
+    "#b0c4de";
 
   // Check for live 404s if requested
   let live404s: Live404Result[] = [];
   if (options.useLiveCrawl) {
     const allLive404s = await findLive404s(options.maxCrawlPages || 20);
     // Filter out already claimed live 404s
-    live404s = allLive404s.filter(l => !claimedFilenames.has(l.filename));
+    live404s = allLive404s.filter((l) => !claimedFilenames.has(l.filename));
   }
 
   const ecosystemStats = {
@@ -280,7 +376,7 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
     items: T[],
     getFilename: (item: T) => string,
     taskType: string,
-    maxAttempts: number = 5
+    maxAttempts: number = 5,
   ): T | null {
     // Shuffle to reduce contention when multiple workers start simultaneously
     const shuffled = [...items].sort(() => Math.random() - 0.5);
@@ -289,7 +385,9 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
       const item = shuffled[i];
       const filename = getFilename(item);
       if (claimTask(taskType, filename, workerId)) {
-        console.error(`[wiki_next_task] Claimed task: ${taskType} -> ${filename} (worker: ${workerId})`);
+        console.error(
+          `[wiki_next_task] Claimed task: ${taskType} -> ${filename} (worker: ${workerId})`,
+        );
         return item;
       }
       // Task was already claimed by another worker, try next
@@ -302,7 +400,7 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
     const claimed = tryClaimFromList(
       live404s,
       (item) => item.filename,
-      "create_from_live_404"
+      "create_from_live_404",
     );
 
     if (claimed) {
@@ -312,7 +410,7 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
         topic: {
           name: claimed.suggestedTitle,
           filename: claimed.filename,
-          context: `This page returns 404 on the live site (${claimed.target}). Referenced by ${claimed.sources.length} page(s): ${claimed.sources.map(s => s.split("/").pop()).join(", ")}. Create this missing page to fix the broken links.`,
+          context: `This page returns 404 on the live site (${claimed.target}). Referenced by ${claimed.sources.length} page(s): ${claimed.sources.map((s) => s.split("/").pop()).join(", ")}. Create this missing page to fix the broken links.`,
         },
         infoboxColor,
         randomSeed,
@@ -330,12 +428,15 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
     const claimed = tryClaimFromList(
       availableBrokenLinks,
       (item) => item.target,
-      "repair_broken_link"
+      "repair_broken_link",
     );
 
     if (claimed) {
-      const topicName = claimed.target.replace(".html", "").split("-")
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+      const topicName = claimed.target
+        .replace(".html", "")
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
 
       return {
         taskType: "repair_broken_link",
@@ -358,7 +459,7 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
     const claimed = tryClaimFromList(
       availablePlaceholders,
       (item) => item,
-      "resolve_placeholder"
+      "resolve_placeholder",
     );
 
     if (claimed) {
@@ -383,7 +484,7 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
     const claimed = tryClaimFromList(
       availableOrphans,
       (item) => item,
-      "fix_orphan"
+      "fix_orphan",
     );
 
     if (claimed) {
@@ -417,7 +518,8 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
     topic: {
       name: "INSPIRED_BY_SEED",
       filename: "to-be-determined.html",
-      context: "Ecosystem is healthy (or all repair tasks are claimed by other workers). Use the humanSeed as pure inspiration—derive a genuinely novel topic unrelated to existing articles. Avoid terminology patterns from the current corpus (semantic-*, temporal-*, *-consciousness). Invent fresh concepts with unique naming.",
+      context:
+        "Ecosystem is healthy (or all repair tasks are claimed by other workers). Use the humanSeed as pure inspiration—derive a genuinely novel topic unrelated to existing articles. Avoid terminology patterns from the current corpus (semantic-*, temporal-*, *-consciousness). Invent fresh concepts with unique naming.",
     },
     humanSeed,
     infoboxColor,
@@ -429,17 +531,20 @@ async function selectNextTask(options: { useLiveCrawl?: boolean; maxCrawlPages?:
 export const tool: ToolModule = {
   definition: {
     name: "wiki_next_task",
-    description: "Get the next task for the Not-Wikipedia autonomous agent. Returns a minimal task specification with task type, topic context, and optional human seed. The agent should infer article content, type, and thematic direction from context (referencing articles for broken links, or human seed for new content). Only provides infobox color for visual variety.",
+    description:
+      "Get the next task for the Not-Wikipedia autonomous agent. Returns a minimal task specification with task type, topic context, and optional human seed. The agent should infer article content, type, and thematic direction from context (referencing articles for broken links, or human seed for new content). Only provides infobox color for visual variety.",
     inputSchema: {
       type: "object",
       properties: {
         use_live_crawl: {
           type: "boolean",
-          description: "If true, crawl the live site for 404 pages instead of using the database. This makes HTTP requests to not-wikipedia.org to find actual broken links.",
+          description:
+            "If true, crawl the live site for 404 pages instead of using the database. This makes HTTP requests to not-wikipedia.org to find actual broken links.",
         },
         max_crawl_pages: {
           type: "number",
-          description: "Maximum number of pages to crawl when using live crawl (default: 20)",
+          description:
+            "Maximum number of pages to crawl when using live crawl (default: 20)",
         },
       },
       required: [],
@@ -456,10 +561,12 @@ export const tool: ToolModule = {
     });
 
     return {
-      content: [{
-        type: "text",
-        text: JSON.stringify(task, null, 2),
-      }],
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(task, null, 2),
+        },
+      ],
     };
   },
 };

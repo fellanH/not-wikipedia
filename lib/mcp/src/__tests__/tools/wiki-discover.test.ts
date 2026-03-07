@@ -446,7 +446,7 @@ describe("wiki-discover", () => {
         "Concept",
         1,
         "root-article.html",
-        75
+        75,
       );
     });
 
@@ -464,7 +464,7 @@ describe("wiki-discover", () => {
         "Concept",
         3,
         "deep-article.html",
-        25
+        25,
       );
     });
 
@@ -483,7 +483,7 @@ describe("wiki-discover", () => {
         "Concept",
         4,
         "very-deep-article.html",
-        0
+        0,
       );
     });
 

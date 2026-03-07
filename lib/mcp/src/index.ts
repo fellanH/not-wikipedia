@@ -35,7 +35,7 @@ const server = new Server(
     capabilities: {
       tools: {}, // We expose tools - add 'resources: {}' or 'prompts: {}' if needed
     },
-  }
+  },
 );
 
 // Handler: List all available tools
@@ -82,7 +82,9 @@ function initializeDatabase() {
     if (needsMigration()) {
       console.error("Running database migration from JSON files...");
       const stats = runMigration();
-      console.error(`Migration complete: ${stats.articles} articles, ${stats.researchers} researchers, ${stats.links} links, ${stats.institutions} institutions`);
+      console.error(
+        `Migration complete: ${stats.articles} articles, ${stats.researchers} researchers, ${stats.links} links, ${stats.institutions} institutions`,
+      );
 
       // Export JSON files to keep dashboard working
       exportAllJson();

@@ -38,7 +38,7 @@ async function getPlaceholders(): Promise<string[]> {
   const placeholders: string[] = [];
   try {
     const files = await fs.readdir(WIKI_DIR);
-    const htmlFiles = files.filter(f => f.endsWith(".html"));
+    const htmlFiles = files.filter((f) => f.endsWith(".html"));
 
     for (const file of htmlFiles) {
       const content = await fs.readFile(path.join(WIKI_DIR, file), "utf-8");
@@ -69,8 +69,8 @@ async function getEcosystemStatus(): Promise<EcosystemStatus> {
 
     // Get broken links from database
     const brokenLinksData = getBrokenLinks();
-    status.brokenLinks = brokenLinksData.map(bl =>
-      `${bl.sources.join(", ")} -> ${bl.target}`
+    status.brokenLinks = brokenLinksData.map(
+      (bl) => `${bl.sources.join(", ")} -> ${bl.target}`,
     );
 
     // Get orphan articles from database
@@ -88,13 +88,14 @@ async function getEcosystemStatus(): Promise<EcosystemStatus> {
       status.healthy = false;
     }
     if (status.placeholders.length > 0) {
-      status.issues.push(`${status.placeholders.length} unresolved placeholders`);
+      status.issues.push(
+        `${status.placeholders.length} unresolved placeholders`,
+      );
       status.healthy = false;
     }
     if (status.orphanArticles.length > 0) {
       status.issues.push(`${status.orphanArticles.length} orphan articles`);
     }
-
   } catch (error) {
     status.issues.push(`Error: ${error}`);
     status.healthy = false;
@@ -106,7 +107,8 @@ async function getEcosystemStatus(): Promise<EcosystemStatus> {
 export const tool: ToolModule = {
   definition: {
     name: "wiki_ecosystem_status",
-    description: "Get the current health status of the Not-Wikipedia ecosystem. Returns article count, broken links, orphan articles, placeholders, and category balance.",
+    description:
+      "Get the current health status of the Not-Wikipedia ecosystem. Returns article count, broken links, orphan articles, placeholders, and category balance.",
     inputSchema: {
       type: "object",
       properties: {},
@@ -117,10 +119,12 @@ export const tool: ToolModule = {
   handler: async () => {
     const status = await getEcosystemStatus();
     return {
-      content: [{
-        type: "text",
-        text: JSON.stringify(status, null, 2),
-      }],
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(status, null, 2),
+        },
+      ],
     };
   },
 };

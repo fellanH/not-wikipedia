@@ -48,14 +48,14 @@ async function getBrokenLinks(): Promise<string[]> {
 
   try {
     const allFiles = await fs.readdir(WIKI_DIR);
-    const files = allFiles.filter(f => f.endsWith(".html"));
+    const files = allFiles.filter((f) => f.endsWith(".html"));
 
     // Read all files in parallel
     const fileContents = await Promise.all(
-      files.map(async file => ({
+      files.map(async (file) => ({
         file,
         content: await fs.readFile(path.join(WIKI_DIR, file), "utf-8"),
-      }))
+      })),
     );
 
     for (const { file, content } of fileContents) {
@@ -161,13 +161,15 @@ async function selectTopic(): Promise<TopicSelection> {
 export const tool: ToolModule = {
   definition: {
     name: "wiki_random_topic",
-    description: "DEPRECATED: Use wiki_next_task instead, which provides human seed inspiration. This tool is kept for backwards compatibility only.",
+    description:
+      "DEPRECATED: Use wiki_next_task instead, which provides human seed inspiration. This tool is kept for backwards compatibility only.",
     inputSchema: {
       type: "object",
       properties: {
         force_random: {
           type: "boolean",
-          description: "If true, skip broken links and priorities, return pure random suggestion",
+          description:
+            "If true, skip broken links and priorities, return pure random suggestion",
         },
       },
       required: [],
@@ -183,26 +185,35 @@ export const tool: ToolModule = {
       const index = secureRandomInt(suggestions.length);
       const brokenLinks = await getBrokenLinks();
       return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({
-            source: "random_suggestion",
-            topic: suggestions[index],
-            context: "Forced random selection (skipped broken links and priorities)",
-            randomSeed,
-            brokenLinksIndex: null,
-            totalBrokenLinks: brokenLinks.length,
-          }, null, 2),
-        }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                source: "random_suggestion",
+                topic: suggestions[index],
+                context:
+                  "Forced random selection (skipped broken links and priorities)",
+                randomSeed,
+                brokenLinksIndex: null,
+                totalBrokenLinks: brokenLinks.length,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
       };
     }
 
     const selection = await selectTopic();
     return {
-      content: [{
-        type: "text",
-        text: JSON.stringify(selection, null, 2),
-      }],
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(selection, null, 2),
+        },
+      ],
     };
   },
 };
