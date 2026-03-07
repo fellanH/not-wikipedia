@@ -142,7 +142,7 @@ function generateArticleHtml(input: ArticleInput): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${input.title} - Wikipedia</title>
-    <link rel="stylesheet" href="../styles">
+    <link rel="stylesheet" href="../styles.css">
     <style>
         .infobox-title { background-color: ${color}; }
     </style>
