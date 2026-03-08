@@ -126,6 +126,51 @@
         </div>
       </section>
 
+      <!-- Seed Inspector -->
+      <section class="card seed-section">
+        <div class="seed-header">
+          <h3>Seed Inspector</h3>
+          <div class="seed-controls">
+            <button
+              onclick="fetchSeed()"
+              class="btn-primary"
+              id="btn-fetch-seed"
+            >
+              Fetch Seed
+            </button>
+            <button onclick="fetchSeedPreview()" id="btn-seed-preview">
+              Full Creative Brief
+            </button>
+            <label class="seed-toggle">
+              <input type="checkbox" id="seed-fallback" />
+              Fallback only
+            </label>
+          </div>
+        </div>
+        <div id="seed-display" class="seed-display hidden">
+          <div id="seed-human" class="seed-panel">
+            <h4>Human Seed</h4>
+            <blockquote id="seed-text" class="seed-quote"></blockquote>
+            <cite id="seed-source" class="seed-cite"></cite>
+            <span id="seed-type" class="seed-type-badge"></span>
+          </div>
+          <div id="seed-voice" class="seed-panel hidden">
+            <h4>Voice Context</h4>
+            <p id="voice-text" class="voice-text"></p>
+            <cite id="voice-source" class="seed-cite"></cite>
+            <span id="voice-type" class="seed-type-badge"></span>
+          </div>
+          <div id="seed-hint" class="seed-panel hidden">
+            <h4>Subject Hint</h4>
+            <span id="hint-value" class="hint-badge"></span>
+          </div>
+          <div id="seed-task" class="seed-panel hidden">
+            <h4>Task Context</h4>
+            <div id="task-meta" class="task-meta"></div>
+          </div>
+        </div>
+      </section>
+
       <!-- Metric Cards Row -->
       <section class="metrics-row">
         <div class="card" id="agent-card">
@@ -305,6 +350,10 @@
             <div class="log-stat">
               <span class="log-stat-label">Messages</span>
               <span class="log-stat-value" id="log-message-count">--</span>
+            </div>
+            <div class="log-stat">
+              <span class="log-stat-label">Errors</span>
+              <span class="log-stat-value" id="log-error-count">--</span>
             </div>
           </div>
         </div>

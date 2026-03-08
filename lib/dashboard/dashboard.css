@@ -1043,8 +1043,56 @@ footer {
   padding: 0.1rem 0;
 }
 
-.logs-mini .log-line.stderr {
+.logs-mini .log-line.stderr,
+.timeline-message.stderr {
   color: #f48771;
+}
+
+/* Error summary banner at top of activity timeline */
+.error-summary-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #fef2f2;
+  border-bottom: 2px solid var(--error);
+  color: var(--error);
+  font-size: 0.85rem;
+}
+
+.error-summary-count {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.error-summary-detail {
+  color: #991b1b;
+  font-size: 0.8rem;
+}
+
+/* Error type label in timeline */
+.timeline-type-error {
+  color: var(--error);
+}
+
+/* Error badge on run cards */
+.run-error-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+
+.run-error-badge.has-errors {
+  background: #fef2f2;
+  color: var(--error);
+  border: 1px solid #fecaca;
+}
+
+.run-error-badge.clean {
+  background: #f0fdf4;
+  color: var(--success);
+  border: 1px solid #bbf7d0;
 }
 
 .logs-mini .log-line.system {
@@ -1197,4 +1245,224 @@ footer {
   .recent-runs {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================
+   SEED INSPECTOR
+   ============================================ */
+
+.seed-section {
+  margin-bottom: 1.5rem;
+}
+
+.seed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.seed-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.seed-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.seed-display {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.seed-panel {
+  background: var(--bg-secondary, #1a1a2e);
+  border: 1px solid var(--border, #2a2a4a);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.seed-panel h4 {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #888);
+}
+
+.seed-quote {
+  margin: 0 0 0.5rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--accent, #6c63ff);
+  font-style: italic;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-primary, #e0e0e0);
+  background: rgba(108, 99, 255, 0.05);
+  border-radius: 0 4px 4px 0;
+}
+
+.seed-cite {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted, #888);
+  margin-bottom: 0.4rem;
+}
+
+.seed-type-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.seed-type-quote {
+  background: #2d6a4f22;
+  color: #52b788;
+  border: 1px solid #52b78844;
+}
+.seed-type-fallback {
+  background: #e9c4601a;
+  color: #e9c460;
+  border: 1px solid #e9c46044;
+}
+.seed-type-reddit {
+  background: #ff450022;
+  color: #ff6b6b;
+  border: 1px solid #ff6b6b44;
+}
+.seed-type-mastodon {
+  background: #6364ff22;
+  color: #818cf8;
+  border: 1px solid #818cf844;
+}
+.seed-type-hackernews {
+  background: #ff660022;
+  color: #ff9f43;
+  border: 1px solid #ff9f4344;
+}
+.seed-type-rss {
+  background: #0ea5e922;
+  color: #38bdf8;
+  border: 1px solid #38bdf844;
+}
+.seed-type-wikipedia {
+  background: #a3a3a322;
+  color: #d4d4d4;
+  border: 1px solid #d4d4d444;
+}
+.seed-type-task {
+  background: #7c3aed22;
+  color: #a78bfa;
+  border: 1px solid #a78bfa44;
+}
+.seed-type-unknown {
+  background: #52525222;
+  color: #a3a3a3;
+  border: 1px solid #a3a3a344;
+}
+
+.voice-text {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-primary, #e0e0e0);
+  white-space: pre-wrap;
+}
+
+.hint-badge {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  background: var(--accent, #6c63ff);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.task-meta-row {
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.task-meta-row strong {
+  color: var(--text-muted, #888);
+  margin-right: 0.4rem;
+}
+
+.task-context-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #bbb);
+}
+
+.task-type-badge,
+.priority-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.task-type-create_new {
+  background: #2d6a4f33;
+  color: #52b788;
+}
+.task-type-repair_broken_link {
+  background: #ff450033;
+  color: #ff6b6b;
+}
+.task-type-create_from_live_404 {
+  background: #ff450033;
+  color: #ff6b6b;
+}
+.task-type-resolve_placeholder {
+  background: #e9c46033;
+  color: #e9c460;
+}
+.task-type-fix_orphan {
+  background: #0ea5e933;
+  color: #38bdf8;
+}
+
+.priority-critical {
+  background: #ff450033;
+  color: #ff6b6b;
+}
+.priority-high {
+  background: #ff660033;
+  color: #ff9f43;
+}
+.priority-medium {
+  background: #e9c46033;
+  color: #e9c460;
+}
+.priority-low {
+  background: #2d6a4f33;
+  color: #52b788;
+}
+
+.color-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-right: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
