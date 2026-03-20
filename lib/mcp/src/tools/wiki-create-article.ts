@@ -6,6 +6,7 @@
 
 import { ToolModule } from "../types.js";
 import * as fs from "fs/promises";
+import * as fsSync from "fs";
 import * as path from "path";
 import { WIKI_DIR, INFOBOX_COLORS } from "../config.js";
 import { insertArticle, completeTask } from "../db/database.js";
@@ -248,6 +249,21 @@ export const tool: ToolModule = {
         see_also: args.see_also as string[] | undefined,
         warning_message: args.warning_message as string | undefined,
       };
+
+      // Filter see_also to only include links to existing articles (zero dead links)
+      if (input.see_also?.length) {
+        const before = input.see_also.length;
+        input.see_also = input.see_also.filter((link) => {
+          const f = link.endsWith(".html") ? link : link + ".html";
+          return fsSync.existsSync(path.join(WIKI_DIR, f));
+        });
+        const filtered = before - input.see_also.length;
+        if (filtered > 0) {
+          console.error(
+            `[wiki_create_article] Filtered ${filtered} see_also link(s) to non-existent articles`,
+          );
+        }
+      }
 
       const html = generateArticleHtml(input);
       const filename = slugify(title) + ".html";

@@ -164,85 +164,70 @@ async function findLive404s(maxPages: number = 20): Promise<Live404Result[]> {
   return results;
 }
 
-// Embedded fallback corpus for human seed inspiration
+// Embedded fallback corpus for human seed inspiration.
+// Deliberately diverse: literature, science, folklore, philosophy, food,
+// geography, music, law, sport, craft -- to push article variety.
 const FALLBACK_CORPUS: Array<{ text: string; source: string }> = [
-  {
-    text: "Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world.",
-    source: "Herman Melville, Moby-Dick",
-  },
-  {
-    text: "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.",
-    source: "Jane Austen, Pride and Prejudice",
-  },
-  {
-    text: "The fog comes on little cat feet. It sits looking over harbor and city on silent haunches and then moves on.",
-    source: "Carl Sandburg, Fog",
-  },
-  {
-    text: "I have measured out my life with coffee spoons.",
-    source: "T.S. Eliot, The Love Song of J. Alfred Prufrock",
-  },
-  {
-    text: "Whereof one cannot speak, thereof one must be silent.",
-    source: "Ludwig Wittgenstein, Tractatus Logico-Philosophicus",
-  },
-  {
-    text: "He who has a why to live can bear almost any how.",
-    source: "Friedrich Nietzsche, Twilight of the Idols",
-  },
-  {
-    text: "There is grandeur in this view of life, with its several powers, having been originally breathed into a few forms or into one.",
-    source: "Charles Darwin, On the Origin of Species",
-  },
-  {
-    text: "The cosmos is within us. We are made of star-stuff. We are a way for the universe to know itself.",
-    source: "Carl Sagan, Cosmos",
-  },
-  {
-    text: "I write entirely to find out what I'm thinking, what I'm looking at, what I see and what it means.",
-    source: "Joan Didion, Why I Write",
-  },
-  {
-    text: "Time is the substance I am made of. Time is a river which sweeps me along, but I am the river.",
-    source: "Jorge Luis Borges, A New Refutation of Time",
-  },
-  {
-    text: "The past is never dead. It's not even past.",
-    source: "William Faulkner, Requiem for a Nun",
-  },
-  {
-    text: "Perhaps one did not want to be loved so much as to be understood.",
-    source: "George Orwell, 1984",
-  },
-  {
-    text: "We are what we pretend to be, so we must be careful about what we pretend to be.",
-    source: "Kurt Vonnegut, Mother Night",
-  },
-  {
-    text: "The mind is its own place, and in itself can make a heaven of hell, a hell of heaven.",
-    source: "John Milton, Paradise Lost",
-  },
-  {
-    text: "Memory is the diary we all carry about with us.",
-    source: "Oscar Wilde",
-  },
-  {
-    text: "Two roads diverged in a yellow wood, and sorry I could not travel both.",
-    source: "Robert Frost, The Road Not Taken",
-  },
+  // Literature & poetry
+  { text: "Call me Ishmael.", source: "Herman Melville, Moby-Dick" },
+  { text: "The fog comes on little cat feet.", source: "Carl Sandburg, Fog" },
+  { text: "I have measured out my life with coffee spoons.", source: "T.S. Eliot" },
+  { text: "So we beat on, boats against the current, borne back ceaselessly into the past.", source: "F. Scott Fitzgerald" },
+  { text: "We are what we pretend to be, so we must be careful about what we pretend to be.", source: "Kurt Vonnegut" },
+  { text: "In the middle of the journey of our life I found myself in a dark wood.", source: "Dante Alighieri" },
+  { text: "Things fall apart; the centre cannot hold.", source: "W.B. Yeats, The Second Coming" },
+
+  // Science & nature
+  { text: "The cosmos is within us. We are made of star-stuff.", source: "Carl Sagan" },
+  { text: "Nothing in biology makes sense except in the light of evolution.", source: "Theodosius Dobzhansky" },
+  { text: "The most incomprehensible thing about the universe is that it is comprehensible.", source: "Albert Einstein" },
+  { text: "A crystal is like a class of children arranged for drill, but a liquid is like a crowd of people in a fairground.", source: "William Henry Bragg" },
+  { text: "The nitrogen in our DNA, the calcium in our teeth, the iron in our blood were made in the interiors of collapsing stars.", source: "Carl Sagan" },
+  { text: "Plate tectonics is not all havoc and destruction. It is also renewal.", source: "Robert Ballard" },
+
+  // Philosophy & thought
+  { text: "Whereof one cannot speak, thereof one must be silent.", source: "Ludwig Wittgenstein" },
   { text: "One cannot step twice in the same river.", source: "Heraclitus" },
-  {
-    text: "The world is too much with us; late and soon, getting and spending, we lay waste our powers.",
-    source: "William Wordsworth, The World Is Too Much With Us",
-  },
-  {
-    text: "So we beat on, boats against the current, borne back ceaselessly into the past.",
-    source: "F. Scott Fitzgerald, The Great Gatsby",
-  },
-  {
-    text: "I took a deep breath and listened to the old brag of my heart: I am, I am, I am.",
-    source: "Sylvia Plath, The Bell Jar",
-  },
+  { text: "The mind is its own place, and in itself can make a heaven of hell.", source: "John Milton" },
+  { text: "Man is condemned to be free.", source: "Jean-Paul Sartre" },
+  { text: "The only true wisdom is in knowing you know nothing.", source: "Socrates" },
+
+  // Non-Western & global
+  { text: "When the moon is not full, the stars shine more brightly.", source: "Buganda proverb" },
+  { text: "The frog does not drink up the pond in which he lives.", source: "Sioux proverb" },
+  { text: "A book is like a garden carried in the pocket.", source: "Chinese proverb" },
+  { text: "Not everything that is faced can be changed, but nothing can be changed until it is faced.", source: "James Baldwin" },
+  { text: "However long the night, the dawn will break.", source: "African proverb" },
+  { text: "The bamboo that bends is stronger than the oak that resists.", source: "Japanese proverb" },
+  { text: "An old error is always more popular than a new truth.", source: "German proverb" },
+  { text: "If you want to go fast, go alone. If you want to go far, go together.", source: "African proverb" },
+
+  // Food, craft & material culture
+  { text: "Cooking is at once child's play and adult joy. And cooking done with care is an act of love.", source: "Craig Claiborne" },
+  { text: "Salt is born of the purest parents: the sun and the sea.", source: "Pythagoras" },
+  { text: "Fermentation is the process by which a substance breaks itself down into simpler substances.", source: "Sandor Katz, The Art of Fermentation" },
+  { text: "The loom is the mother of all machines.", source: "Textile history aphorism" },
+  { text: "Clay remembers the hands that shaped it.", source: "Japanese pottery tradition" },
+
+  // Geography & exploration
+  { text: "Maps are the first and last thing a refugee packs.", source: "Amitav Ghosh" },
+  { text: "The sea, once it casts its spell, holds one in its net of wonder forever.", source: "Jacques Cousteau" },
+  { text: "To those devoid of imagination, a blank place on the map is a useless waste.", source: "Aldo Leopold" },
+  { text: "Mountains are not stadiums where I satisfy my ambition to achieve, they are cathedrals where I practice my religion.", source: "Anatoli Boukreev" },
+
+  // Music & sound
+  { text: "Where words fail, music speaks.", source: "Hans Christian Andersen" },
+  { text: "The history of a people is found in its songs.", source: "George Jellinek" },
+  { text: "Silence is the canvas upon which music paints.", source: "Attributed to various" },
+
+  // Law & governance
+  { text: "The law is reason, free from passion.", source: "Aristotle" },
+  { text: "Borders are scratched across the hearts of men by strangers with a calm, judicial pen.", source: "Marya Mannes" },
+
+  // Sport & games
+  { text: "In chess, as in life, forethought wins.", source: "Charles Buxton" },
+  { text: "You miss 100% of the shots you never take.", source: "Wayne Gretzky" },
+  { text: "The ball is round, and the game lasts ninety minutes. Everything else is just theory.", source: "Sepp Herberger" },
 ];
 
 async function fetchHumanSeed(): Promise<HumanSeed> {
